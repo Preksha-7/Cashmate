@@ -1,9 +1,10 @@
 // backend/src/middleware/validation.js
 import Joi from "joi";
 
-export const validateRequest = (schema) => {
+export const validateRequest = (schema, source = "body") => {
   return (req, res, next) => {
-    const { error } = schema.validate(req.body);
+    const dataToValidate = source === "query" ? req.query : req.body;
+    const { error } = schema.validate(dataToValidate);
     if (error) {
       return res.status(400).json({
         error: "Validation failed",
