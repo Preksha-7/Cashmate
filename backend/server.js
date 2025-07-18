@@ -7,6 +7,9 @@ import rateLimit from "express-rate-limit";
 import dotenv from "dotenv";
 import { testConnection } from "./src/config/database.js";
 
+// Import routes
+import authRoutes from "./src/routes/auth.js";
+
 dotenv.config();
 
 const app = express();
@@ -62,19 +65,10 @@ app.get("/health", async (req, res) => {
   }
 });
 
-// API Routes (placeholder - will be replaced with actual routes)
-app.use("/api/auth", (req, res) => {
-  res.json({
-    message: "Auth routes ready",
-    endpoints: [
-      "POST /api/auth/register",
-      "POST /api/auth/login",
-      "POST /api/auth/refresh",
-      "POST /api/auth/logout",
-    ],
-  });
-});
+// API Routes
+app.use("/api/auth", authRoutes);
 
+// Placeholder routes for future implementation
 app.use("/api/transactions", (req, res) => {
   res.json({
     message: "Transaction routes ready",
@@ -127,6 +121,7 @@ const startServer = async () => {
       console.log(`🚀 Server running on port ${PORT}`);
       console.log(`📊 Environment: ${process.env.NODE_ENV}`);
       console.log(`🔗 Health check: http://localhost:${PORT}/health`);
+      console.log(`🔐 Auth endpoints: http://localhost:${PORT}/api/auth`);
     });
   } catch (error) {
     console.error("Failed to start server:", error);
