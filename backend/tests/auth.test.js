@@ -9,5 +9,6 @@ describe("Auth routes", () => {
       password: "12345678",
     });
     expect(res.statusCode).toEqual(201);
+    git;
   });
 });
