@@ -1,5 +1,5 @@
-// backend/src/controllers/authController.js
 import { AuthService } from "../services/authService.js";
+import { User } from "../models/User.js";
 
 export class AuthController {
   // Register new user
@@ -147,21 +147,65 @@ export class AuthController {
         success: true,
         message: "Profile updated successfully",
         data: {
-          user: {
-            id: updatedUser.id,
-            name: updatedUser.name,
-            email: updatedUser.email,
-            created_at: updatedUser.created_at,
-            updated_at: updatedUser.updated_at,
-          },
+          user: updatedUser.toSafeObject(),
         },
       });
     } catch (error) {
       console.error("Update profile error:", error);
 
+      if (
+        error.message.includes("Duplicate entry") &&
+        error.message.includes("email")
+      ) {
+        return res.status(409).json({
+          success: false,
+          error: "Email already exists",
+          message: "This email is already registered with another account",
+        });
+      }
+
       res.status(500).json({
         success: false,
         error: "Failed to update profile",
+        message:
+          process.env.NODE_ENV === "development"
+            ? error.message
+            : "Internal server error",
+      });
+    }
+  }
+
+  // Change password
+  static async changePassword(req, res) {
+    try {
+      const { currentPassword, newPassword } = req.body;
+
+      // Verify current password
+      const user = await User.findById(req.user.id);
+      const isCurrentPasswordValid = await user.verifyPassword(currentPassword);
+
+      if (!isCurrentPasswordValid) {
+        return res.status(400).json({
+          success: false,
+          error: "Invalid current password",
+          message: "The current password you entered is incorrect",
+        });
+      }
+
+      // Update password
+      await User.update(req.user.id, { password: newPassword });
+
+      res.json({
+        success: true,
+        message: "Password changed successfully",
+        data: null,
+      });
+    } catch (error) {
+      console.error("Change password error:", error);
+
+      res.status(500).json({
+        success: false,
+        error: "Failed to change password",
         message:
           process.env.NODE_ENV === "development"
             ? error.message
