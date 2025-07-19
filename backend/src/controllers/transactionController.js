@@ -1,6 +1,37 @@
 // backend/src/controllers/transactionController.js
 import { Transaction } from "../models/Transaction.js";
 
+export const getTransactions = async (req, res) => {
+  try {
+    const userId = req.user.id;
+    const { page = 1, limit = 10, start, end } = req.query;
+
+    const query = { user_id: userId };
+    if (start && end) {
+      query.date = {
+        $gte: new Date(start),
+        $lte: new Date(end),
+      };
+    }
+
+    const transactions = await Transaction.find(query)
+      .sort({ date: -1 })
+      .skip((page - 1) * limit)
+      .limit(parseInt(limit));
+
+    const total = await Transaction.countDocuments(query);
+
+    res.json({
+      total,
+      page: parseInt(page),
+      limit: parseInt(limit),
+      data: transactions,
+    });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+};
+
 export class TransactionController {
   // Create new transaction
   static async create(req, res) {

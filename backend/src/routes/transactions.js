@@ -13,6 +13,10 @@ import {
 } from "../middleware/validation.js";
 import { authenticateToken } from "../middleware/auth.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
+import { getTransactions } from "../controllers/transactionController.js";
+import { addTransaction } from "../controllers/transactionController.js";
+import { protect } from "../middleware/auth.js";
+import { validateTransaction } from "../middleware/validators.js";
 
 const router = express.Router();
 
@@ -21,6 +25,9 @@ router.use(authenticateToken);
 
 // Apply input sanitization to all routes
 router.use(sanitizeInput);
+
+router.get("/", protect, getTransactions);
+router.post("/", protect, validateTransaction, addTransaction);
 
 // Create new transaction
 router.post(
