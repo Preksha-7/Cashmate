@@ -5,6 +5,7 @@ import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import path from "path";
+import { ensureDirectoriesExist } from "./utils/startup.js";
 
 // Import routes
 import authRoutes from "./routes/auth.js";
@@ -40,17 +41,10 @@ app.use(
 
 // Rate limiting
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 100, // limit each IP to 100 requests per windowMs
-  message: {
-    error: "Too many requests",
-    message: "Too many requests from this IP, please try again later.",
-  },
-  standardHeaders: true,
-  legacyHeaders: false,
+  windowMs: 15 * 60 * 1000,
+  max: 100,
 });
-
-app.use(limiter);
+app.use("/api/", limiter);
 
 // Stricter rate limiting for auth endpoints
 const authLimiter = rateLimit({
@@ -105,6 +99,7 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/receipts", uploadLimiter, receiptRoutes);
+ensureDirectoriesExist();
 
 // 404 handler
 app.use("*", (req, res) => {

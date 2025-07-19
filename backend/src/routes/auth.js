@@ -1,5 +1,7 @@
 // backend/src/routes/auth.js
 import express from "express";
+import * as authController from "../controllers/authController.js";
+import { validateSignup, validateLogin } from "../middleware/validate.js";
 import { AuthController } from "../controllers/authController.js";
 import {
   validateRequest,
@@ -28,5 +30,8 @@ router.post("/logout", AuthController.logout);
 // Protected routes
 router.get("/profile", authenticateToken, AuthController.getProfile);
 router.put("/profile", authenticateToken, AuthController.updateProfile);
+
+router.post("/signup", validateSignup, authController.signup);
+router.post("/login", validateLogin, authController.login);
 
 export default router;
