@@ -2,10 +2,11 @@
 import { logger } from "../utils/logger.js";
 
 export class AppError extends Error {
-  constructor(message, statusCode = 500, isOperational = true) {
+  constructor(message, statusCode = 500, isOperational = true, details = null) {
     super(message);
     this.statusCode = statusCode;
     this.isOperational = isOperational;
+    this.details = details;
     this.timestamp = new Date().toISOString();
 
     Error.captureStackTrace(this, this.constructor);
@@ -26,6 +27,7 @@ export const errorHandler = (err, req, res, next) => {
     ip: req.ip,
     userAgent: req.get("User-Agent"),
     timestamp: new Date().toISOString(),
+    ...(error.details && { details: error.details }),
   });
 
   // MySQL duplicate entry error
@@ -37,6 +39,18 @@ export const errorHandler = (err, req, res, next) => {
   // MySQL foreign key constraint error
   if (error.code === "ER_NO_REFERENCED_ROW_2") {
     const message = "Referenced record not found";
+    error = new AppError(message, 400);
+  }
+
+  // MySQL data too long error
+  if (error.code === "ER_DATA_TOO_LONG") {
+    const message = "Data too long for column";
+    error = new AppError(message, 400);
+  }
+
+  // MySQL invalid data type error
+  if (error.code === "ER_TRUNCATED_WRONG_VALUE") {
+    const message = "Invalid data type provided";
     error = new AppError(message, 400);
   }
 
@@ -60,8 +74,22 @@ export const errorHandler = (err, req, res, next) => {
     error = new AppError(message, 401);
   }
 
-  // Validation errors
-  if (error.name === "ValidationError") {
+  // Joi validation errors
+  if (error.name === "ValidationError" && error.details) {
+    const validationErrors = error.details.map((detail) => ({
+      field: detail.path.join("."),
+      message: detail.message,
+      value: detail.context?.value,
+    }));
+
+    const message = `Validation failed: ${validationErrors
+      .map((e) => e.message)
+      .join(", ")}`;
+    error = new AppError(message, 400, true, { validationErrors });
+  }
+
+  // Mongoose validation errors
+  if (error.name === "ValidationError" && error.errors) {
     const message = Object.values(error.errors)
       .map((val) => val.message)
       .join(", ");
@@ -90,20 +118,45 @@ export const errorHandler = (err, req, res, next) => {
     error = new AppError(message, 400);
   }
 
+  // Rate limiting errors
+  if (error.statusCode === 429 || error.code === "RATE_LIMIT_EXCEEDED") {
+    const message = "Too many requests, please try again later";
+    error = new AppError(message, 429);
+  }
+
+  // Timeout errors
+  if (error.code === "ETIMEDOUT" || error.code === "ESOCKETTIMEDOUT") {
+    const message = "Request timeout";
+    error = new AppError(message, 408);
+  }
+
   // Default to 500 server error
   const statusCode = error.statusCode || 500;
   const message = error.message || "Internal Server Error";
 
-  // Send error response
-  res.status(statusCode).json({
+  // Build error response
+  const errorResponse = {
     success: false,
     error: getErrorName(statusCode),
     message: message,
-    ...(process.env.NODE_ENV === "development" && {
-      stack: error.stack,
-      timestamp: error.timestamp,
-    }),
-  });
+    timestamp: error.timestamp || new Date().toISOString(),
+  };
+
+  // Add validation errors if present
+  if (error.details?.validationErrors) {
+    errorResponse.validationErrors = error.details.validationErrors;
+  }
+
+  // Add stack trace and additional details in development
+  if (process.env.NODE_ENV === "development") {
+    errorResponse.stack = error.stack;
+    if (error.details && !error.details.validationErrors) {
+      errorResponse.details = error.details;
+    }
+  }
+
+  // Send error response
+  res.status(statusCode).json(errorResponse);
 };
 
 // Get error name based on status code
@@ -117,6 +170,10 @@ const getErrorName = (statusCode) => {
       return "Forbidden";
     case 404:
       return "Not Found";
+    case 405:
+      return "Method Not Allowed";
+    case 408:
+      return "Request Timeout";
     case 409:
       return "Conflict";
     case 413:
@@ -127,8 +184,12 @@ const getErrorName = (statusCode) => {
       return "Too Many Requests";
     case 500:
       return "Internal Server Error";
+    case 502:
+      return "Bad Gateway";
     case 503:
       return "Service Unavailable";
+    case 504:
+      return "Gateway Timeout";
     default:
       return "Error";
   }
@@ -147,15 +208,50 @@ export const notFound = (req, res, next) => {
   next(error);
 };
 
+// Validation error formatter
+export const formatValidationError = (error) => {
+  if (error.name === "ValidationError" && error.details) {
+    return error.details.map((detail) => ({
+      field: detail.path.join("."),
+      message: detail.message,
+      value: detail.context?.value,
+    }));
+  }
+  return null;
+};
+
 // Handle uncaught exceptions
 process.on("uncaughtException", (err) => {
-  logger.error("Uncaught Exception:", err);
+  logger.error("Uncaught Exception:", {
+    message: err.message,
+    stack: err.stack,
+    timestamp: new Date().toISOString(),
+  });
+
+  // Graceful shutdown
   process.exit(1);
 });
 
 // Handle unhandled promise rejections
 process.on("unhandledRejection", (err, promise) => {
-  logger.error("Unhandled Promise Rejection:", err);
-  // Close server & exit process
+  logger.error("Unhandled Promise Rejection:", {
+    message: err.message,
+    stack: err.stack,
+    promise: promise.toString(),
+    timestamp: new Date().toISOString(),
+  });
+
+  // Graceful shutdown
   process.exit(1);
+});
+
+// Graceful shutdown handling
+process.on("SIGTERM", () => {
+  logger.info("SIGTERM received. Shutting down gracefully...");
+  process.exit(0);
+});
+
+process.on("SIGINT", () => {
+  logger.info("SIGINT received. Shutting down gracefully...");
+  process.exit(0);
 });
