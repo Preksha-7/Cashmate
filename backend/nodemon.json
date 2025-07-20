@@ -1,6 +1,14 @@
 {
-  "watch": ["src", "server"],
-  "ignore": ["node_modules", "logs", "uploads", "*.log", "temp"],
+  "watch": ["src/**/*", "server.js"],
+  "ignore": [
+    "node_modules/**/*",
+    "logs/**/*",
+    "uploads/**/*",
+    "temp/**/*",
+    "*.log",
+    ".env"
+  ],
   "ext": "js,json",
-  "delay": "2500"
+  "delay": "2000",
+  "verbose": true
 }

@@ -5,7 +5,6 @@ import rateLimit from "express-rate-limit";
 import morgan from "morgan";
 import dotenv from "dotenv";
 import path from "path";
-import { ensureDirectoriesExist } from "./utils/startup.js";
 
 // Import routes
 import authRoutes from "./routes/auth.js";
@@ -14,9 +13,6 @@ import receiptRoutes from "./routes/receipts.js";
 
 // Import middleware
 import { errorHandler } from "./middleware/errorHandler.js";
-
-// Import database
-import { testConnection } from "./config/database.js";
 
 // Load environment variables
 dotenv.config();
@@ -99,7 +95,6 @@ app.get("/health", (req, res) => {
 app.use("/api/auth", authLimiter, authRoutes);
 app.use("/api/transactions", transactionRoutes);
 app.use("/api/receipts", uploadLimiter, receiptRoutes);
-ensureDirectoriesExist();
 
 // 404 handler
 app.use("*", (req, res) => {
@@ -112,47 +107,5 @@ app.use("*", (req, res) => {
 
 // Error handling middleware (should be last)
 app.use(errorHandler);
-
-// Initialize database connection
-const initializeApp = async () => {
-  try {
-    const dbConnected = await testConnection();
-    if (!dbConnected) {
-      console.error("Failed to connect to database");
-      process.exit(1);
-    }
-    console.log("🚀 CashMate API initialized successfully");
-  } catch (error) {
-    console.error("Failed to initialize app:", error);
-    process.exit(1);
-  }
-};
-
-// Graceful shutdown handling
-const gracefulShutdown = (signal) => {
-  console.log(`\n${signal} received. Starting graceful shutdown...`);
-
-  // Close server
-  const server = app.listen();
-  server.close(() => {
-    console.log("HTTP server closed.");
-    process.exit(0);
-  });
-
-  // Force close after 30 seconds
-  setTimeout(() => {
-    console.error(
-      "Could not close connections in time, forcefully shutting down"
-    );
-    process.exit(1);
-  }, 30000);
-};
-
-// Handle termination signals
-process.on("SIGTERM", () => gracefulShutdown("SIGTERM"));
-process.on("SIGINT", () => gracefulShutdown("SIGINT"));
-
-// Initialize app on startup
-initializeApp();
 
 export default app;
