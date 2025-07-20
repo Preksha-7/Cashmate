@@ -178,3 +178,5 @@ The frontend application should open in your browser at http://localhost:3000.
 - **Backend**: Node.js, Express.js, MySQL, JWT for authentication, Multer for file uploads, Joi for validation, Winston for logging
 - **Frontend**: React.js, React Router DOM, Axios for API calls, Recharts for charting, Tailwind CSS for styling
 - **OCR/PDF Microservice**: Python, FastAPI, PyTesseract, PDFPlumber
+
+## For viewing the demo video, click on view raw
