@@ -1,4 +1,4 @@
-// backend/src/services/ocrService.js
+// backend/src/services/ocrServices.js
 import FormData from "form-data";
 import fs from "fs";
 import fetch from "node-fetch";
@@ -108,15 +108,14 @@ class OCRService {
       ocrResult.data;
 
     // Suggest a category based on the extracted vendor or raw text
-    const suggestedCategory = categorizeTransaction(
-      extracted_data.vendor || raw_text
-    );
+    const descriptionForCategory = extracted_data.vendor || raw_text;
+    const suggestedCategory = categorizeTransaction(descriptionForCategory);
 
     return {
       amount: extracted_data.amount,
       date: extracted_data.date,
       vendor: extracted_data.vendor,
-      currency: extracted_data.currency || "INR",
+      currency: extracted_data.currency || "INR", // Default to INR, can be enhanced
       confidence_score: confidence_score,
       processing_status: processing_status,
       raw_text: raw_text?.substring(0, 1000), // Limit raw text size

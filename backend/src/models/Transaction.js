@@ -89,7 +89,6 @@ export class Transaction {
     const conditions = ["user_id = ?"];
     const queryParams = [userId];
 
-    // Apply filters
     if (filters.startDate && filters.endDate) {
       conditions.push("date BETWEEN ? AND ?");
       queryParams.push(filters.startDate, filters.endDate);
@@ -105,7 +104,6 @@ export class Transaction {
 
     queryParts.push(`WHERE ${conditions.join(" AND ")}`);
 
-    // Apply sorting
     const sortableFields = ["date", "amount", "category", "type", "created_at"];
     const orderBy = sortableFields.includes(filters.sort)
       ? filters.sort
@@ -113,7 +111,6 @@ export class Transaction {
     const orderDirection = filters.order === "asc" ? "ASC" : "DESC";
     queryParts.push(`ORDER BY ${orderBy} ${orderDirection}`);
 
-    // Apply pagination - INLINING LIMIT AND OFFSET
     if (filters.limit !== undefined && filters.offset !== undefined) {
       const limitValue = Math.floor(Number(filters.limit));
       const offsetValue = Math.floor(Number(filters.offset));
@@ -124,10 +121,7 @@ export class Transaction {
         !isNaN(offsetValue) &&
         offsetValue >= 0
       ) {
-        // Inlining limit and offset values directly into the query string
-        // This changes the number of '?' expected by mysql2 for this part
         queryParts.push(`LIMIT ${limitValue} OFFSET ${offsetValue}`);
-        // Do NOT push to queryParams here, as they are inlined
       } else {
         console.warn(
           "Invalid pagination values received in getByUserId (after floor):",
@@ -138,7 +132,7 @@ export class Transaction {
     }
 
     const finalQuery = queryParts.join(" ");
-    const rows = await executeQuery(finalQuery, queryParams); // queryParams will now have fewer elements if limit/offset are present
+    const rows = await executeQuery(finalQuery, queryParams);
     return rows.map((row) => new Transaction(row));
   }
 
@@ -147,7 +141,6 @@ export class Transaction {
     const conditions = ["user_id = ?"];
     const params = [userId];
 
-    // Apply filters
     if (filters.startDate && filters.endDate) {
       conditions.push("date BETWEEN ? AND ?");
       params.push(filters.startDate, filters.endDate);
@@ -162,7 +155,6 @@ export class Transaction {
     }
 
     let finalQuery = `${baseQuery} WHERE ${conditions.join(" AND ")}`;
-
     const rows = await executeQuery(finalQuery, params);
     return rows[0].count;
   }
@@ -186,24 +178,24 @@ export class Transaction {
     };
   }
 
-  // Get transactions by category for a given period
+  // Get transactions by category
   static async getByCategory(userId, startDate, endDate) {
     const query = `
       SELECT category, SUM(amount) as totalAmount, COUNT(*) as count
       FROM transactions
-      WHERE user_id = ? AND date BETWEEN ? AND ? AND type = 'expense'
+      WHERE user_id = ? AND date BETWEEN ? AND ?
       GROUP BY category
       ORDER BY totalAmount DESC;
     `;
-    const rows = await executeQuery(query, [userId, startDate, endDate]);
-    return rows.map((row) => ({
+    const result = await executeQuery(query, [userId, startDate, endDate]);
+    return result.map((row) => ({
       category: row.category,
       totalAmount: parseFloat(row.totalAmount),
-      count: row.count,
+      count: parseInt(row.count),
     }));
   }
 
-  // Get monthly summary for a given year
+  // Get monthly summary
   static async getMonthlySummary(userId, year) {
     const query = `
       SELECT
@@ -230,8 +222,10 @@ export class Transaction {
   // Get user's unique categories (for categorization features)
   static async getCategories(userId) {
     const query = `
-      SELECT DISTINCT category FROM transactions
-      WHERE user_id = ? ORDER BY category ASC;
+      SELECT DISTINCT category
+      FROM transactions
+      WHERE user_id = ?
+      ORDER BY category ASC;
     `;
     const rows = await executeQuery(query, [userId]);
     return rows.map((row) => row.category);
@@ -253,16 +247,15 @@ export class Transaction {
   // Get transaction statistics (overview)
   static async getStats(userId, startDate, endDate) {
     const query = `
-        SELECT
-            COUNT(*) as totalTransactions,
-            SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as totalIncome,
-            SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as totalExpenses,
-            SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as netBalance
-        FROM transactions
-        WHERE user_id = ? AND date BETWEEN ? AND ?;
+      SELECT
+          COUNT(*) as totalTransactions,
+          SUM(CASE WHEN type = 'income' THEN amount ELSE 0 END) as totalIncome,
+          SUM(CASE WHEN type = 'expense' THEN amount ELSE 0 END) as totalExpenses,
+          SUM(CASE WHEN type = 'income' THEN amount ELSE -amount END) as netBalance
+      FROM transactions
+      WHERE user_id = ? AND date BETWEEN ? AND ?;
     `;
     const rows = await executeQuery(query, [userId, startDate, endDate]);
-    // Ensure values are numbers even if null from DB
     return {
       totalTransactions: parseInt(rows[0].totalTransactions || 0),
       totalIncome: parseFloat(rows[0].totalIncome || 0),
@@ -276,10 +269,7 @@ export class Transaction {
     try {
       const query = `
         SELECT id FROM transactions
-        WHERE user_id = ?
-        AND date = ?
-        AND amount = ?
-        AND description = ?
+        WHERE user_id = ? AND date = ? AND amount = ? AND description = ?
         LIMIT 1
       `;
       const [rows] = await executeQuery(query, [

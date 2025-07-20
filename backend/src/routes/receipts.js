@@ -3,6 +3,7 @@ import express from "express";
 import { ReceiptController } from "../controllers/receiptController.js";
 import { uploadSingle, uploadMultiple } from "../middleware/multer.js";
 import { authenticateToken } from "../middleware/auth.js";
+import { asyncHandler } from "../middleware/errorHandler.js"; // Import asyncHandler
 
 const router = express.Router();
 
@@ -10,25 +11,32 @@ const router = express.Router();
 router.use(authenticateToken);
 
 // Upload single receipt
-router.post("/upload", ...uploadSingle("receipt"), ReceiptController.upload);
+router.post(
+  "/upload",
+  uploadSingle("receipt"),
+  asyncHandler(ReceiptController.upload)
+);
 
 // Upload multiple receipts
 router.post(
   "/upload-multiple",
-  ...uploadMultiple("receipts", 5),
-  ReceiptController.uploadMultiple
+  uploadMultiple("receipts", 5),
+  asyncHandler(ReceiptController.uploadMultiple)
 );
 
-// Get all receipts for user
-router.get("/", ReceiptController.getAll);
+// Get all receipts for user (can filter by status e.g., /api/receipts?status=completed)
+router.get("/", asyncHandler(ReceiptController.getAll));
 
-// Get receipt by ID
-router.get("/:id", ReceiptController.getById);
+// Get a specific receipt by ID (used for polling processing status and fetching parsed data)
+router.get("/:id", asyncHandler(ReceiptController.getById));
 
-// Serve receipt file
-router.get("/:id/file", ReceiptController.serveFile);
+// Update a specific receipt's parsed data (after user edits preview)
+router.put("/:id", asyncHandler(ReceiptController.updateReceiptData));
 
 // Delete receipt
-router.delete("/:id", ReceiptController.delete);
+router.delete("/:id", asyncHandler(ReceiptController.delete));
+
+// Serve receipt file (e.g., to display image preview directly)
+router.get("/file/:id", asyncHandler(ReceiptController.serveFile));
 
 export default router;

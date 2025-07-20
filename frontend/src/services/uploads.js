@@ -7,8 +7,9 @@ export const uploadService = {
       const formData = new FormData();
       formData.append("receipt", file);
 
+      // Uses backend route /api/receipts/upload
       const response = await apiService.upload(
-        "/uploads/receipt",
+        "/receipts/upload",
         formData,
         onUploadProgress
       );
@@ -24,8 +25,9 @@ export const uploadService = {
       const formData = new FormData();
       formData.append("statement", file);
 
+      // Uses backend route /api/uploads/bank-statement (from pdfController)
       const response = await apiService.upload(
-        "/uploads/bank-statement",
+        "/uploads/bank-statement", // This route is handled by pdfController
         formData,
         onUploadProgress
       );
@@ -35,20 +37,36 @@ export const uploadService = {
     }
   },
 
-  // Get upload status
-  getUploadStatus: async (uploadId) => {
+  // Get upload status/details for a specific receipt (used for polling)
+  // This now calls /api/receipts/:id
+  getUploadStatus: async (receiptId) => {
     try {
-      const response = await apiService.get(`/uploads/status/${uploadId}`);
-      return response;
+      const response = await apiService.get(`/receipts/${receiptId}`);
+      return response; // Response contains { success, message, data: { receipt } }
     } catch (error) {
       throw error;
     }
   },
 
-  // Get all uploads for user
+  // Update processed data (e.g., after user edits the preview) and/or status
+  // This now calls PUT /api/receipts/:id
+  updateProcessedData: async (receiptId, updateData) => {
+    try {
+      const response = await apiService.put(
+        `/receipts/${receiptId}`,
+        updateData
+      );
+      return response; // Response contains { success, message, data: { receipt } }
+    } catch (error) {
+      throw error;
+    }
+  },
+
+  // Get all uploads for user (if you implement a list of all uploads)
   getUserUploads: async (params = {}) => {
     try {
-      const response = await apiService.get("/uploads", params);
+      // This route would be /api/receipts
+      const response = await apiService.get("/receipts", params);
       return response;
     } catch (error) {
       throw error;
@@ -58,57 +76,11 @@ export const uploadService = {
   // Delete upload
   deleteUpload: async (uploadId) => {
     try {
-      const response = await apiService.delete(`/uploads/${uploadId}`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Process uploaded receipt manually
-  processReceipt: async (uploadId) => {
-    try {
-      const response = await apiService.post(`/uploads/process/${uploadId}`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Get processed data from upload
-  getProcessedData: async (uploadId) => {
-    try {
-      const response = await apiService.get(`/uploads/processed/${uploadId}`);
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Update processed transaction data
-  updateProcessedData: async (uploadId, transactionData) => {
-    try {
-      const response = await apiService.put(
-        `/uploads/processed/${uploadId}`,
-        transactionData
-      );
-      return response;
-    } catch (error) {
-      throw error;
-    }
-  },
-
-  // Confirm and save processed transactions
-  confirmProcessedTransactions: async (uploadId, transactions) => {
-    try {
-      const response = await apiService.post(`/uploads/confirm/${uploadId}`, {
-        transactions,
-      });
+      // This route would be DELETE /api/receipts/:id
+      const response = await apiService.delete(`/receipts/${uploadId}`);
       return response;
     } catch (error) {
       throw error;
     }
   },
 };
-
-export const uploadReceipt = uploadService.uploadReceipt;

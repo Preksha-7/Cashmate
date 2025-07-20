@@ -1,7 +1,7 @@
 // src/services/pdfParserService.js
-import axios from "axios"; // Use import instead of require
-import FormData from "form-data"; // Use import instead of require
-import { logger } from "../utils/logger.js"; // Use import instead of require
+import axios from "axios";
+import FormData from "form-data";
+import { logger } from "../utils/logger.js";
 import { categorizeTransaction } from "../utils/categorization.js"; // Import categorization utility
 
 class PDFParserService {
@@ -21,7 +21,7 @@ class PDFParserService {
     try {
       const formData = new FormData();
       formData.append("file", pdfBuffer, {
-        filename: filename, // Correctly pass filename here
+        filename: filename,
         contentType: "application/pdf",
       });
 
@@ -48,9 +48,9 @@ class PDFParserService {
         data: error.response?.data,
       });
 
-      if (error.response?.status === 400) {
+      if (error.response && error.response.status === 400) {
         throw new Error(`Invalid PDF format: ${error.response.data.detail}`);
-      } else if (error.response?.status === 500) {
+      } else if (error.response && error.response.status === 500) {
         throw new Error(`PDF processing failed: ${error.response.data.detail}`);
       } else if (error.code === "ECONNREFUSED") {
         throw new Error("PDF parser service is unavailable");
@@ -84,11 +84,11 @@ class PDFParserService {
    */
   transformToTransactions(parsedData, userId) {
     const transactions = parsedData.transactions.map((transaction) => ({
-      user_id: userId, // Changed to user_id to match MySQL schema
-      date: transaction.date, // Date should already be 'YYYY-MM-DD' from Python service
+      user_id: userId,
+      date: transaction.date,
       description: transaction.description,
       amount: parseFloat(transaction.amount),
-      type: transaction.transaction_type === "debit" ? "expense" : "income", // Map 'debit'/'credit' to 'expense'/'income'
+      type: transaction.transaction_type === "debit" ? "expense" : "income",
       category: categorizeTransaction(transaction.description), // Use categorization utility
       // balance: transaction.balance, // Not directly stored in Transaction model
       // source: "bank_statement", // Not directly stored in Transaction model

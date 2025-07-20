@@ -1,6 +1,6 @@
 // backend/src/routes/transactions.js
 import express from "express";
-import Joi from "joi";
+import Joi from "joi"; // Ensure Joi is imported if not already
 import { TransactionController } from "../controllers/transactionController.js";
 import {
   validateRequest,
@@ -12,7 +12,7 @@ import {
   sanitizeInput,
 } from "../middleware/validation.js";
 import { authenticateToken } from "../middleware/auth.js";
-import { asyncHandler } from "../middleware/errorHandler.js";
+import { asyncHandler } from "../middleware/errorHandler.js"; // Ensure asyncHandler is imported
 
 const router = express.Router();
 
@@ -22,35 +22,98 @@ router.use(authenticateToken);
 // Apply input sanitization to all routes
 router.use(sanitizeInput);
 
-// Get financial summary (must be before /:id route)
+// Get financial summary
 router.get(
   "/summary",
   validateRequest(transactionQuerySchema, "query"),
-  asyncHandler(TransactionController.getSummary)
+  asyncHandler(async (req, res, next) => {
+    try {
+      const { Transaction } = await import("../models/Transaction.js");
+      const { startDate, endDate } = req.query;
+
+      const start =
+        startDate ||
+        new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+          .toISOString()
+          .split("T")[0];
+      const end = endDate || new Date().toISOString().split("T")[0];
+
+      const summary = await Transaction.getFinancialSummary(
+        req.user.id,
+        start,
+        end
+      );
+      res.json({
+        success: true,
+        message: "Financial summary retrieved successfully",
+        summary,
+      });
+    } catch (error) {
+      next(error); // Pass to global error handler
+    }
+  })
 );
 
-// Get transactions by category (must be before /:id route)
+// Get transactions by category
 router.get(
   "/categories",
   validateRequest(transactionQuerySchema, "query"),
-  asyncHandler(TransactionController.getByCategory)
+  asyncHandler(async (req, res, next) => {
+    try {
+      const { Transaction } = await import("../models/Transaction.js");
+      const { startDate, endDate } = req.query;
+      const start =
+        startDate ||
+        new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+          .toISOString()
+          .split("T")[0];
+      const end = endDate || new Date().toISOString().split("T")[0];
+      const categories = await Transaction.getByCategory(
+        req.user.id,
+        start,
+        end
+      );
+      res.json({
+        success: true,
+        message: "Category data retrieved successfully",
+        categories,
+      });
+    } catch (error) {
+      next(error); // Pass to global error handler
+    }
+  })
 );
 
-// Get monthly summary (must be before /:id route)
+// Get monthly summary
 router.get(
   "/monthly-summary",
   validateRequest(transactionQuerySchema, "query"),
-  asyncHandler(TransactionController.getMonthlySummary)
+  asyncHandler(async (req, res, next) => {
+    try {
+      const { Transaction } = await import("../models/Transaction.js");
+      const { year } = req.query;
+      const monthlyData = await Transaction.getMonthlySummary(
+        req.user.id,
+        year ? parseInt(year) : new Date().getFullYear()
+      );
+      res.json({
+        success: true,
+        message: "Monthly summary retrieved successfully",
+        monthlyData,
+      });
+    } catch (error) {
+      next(error); // Pass to global error handler
+    }
+  })
 );
 
-// Get user's unique categories (must be before /:id route)
+// Get user's unique categories (for categorization features)
 router.get(
   "/meta/categories",
   asyncHandler(async (req, res) => {
     try {
       const { Transaction } = await import("../models/Transaction.js");
       const categories = await Transaction.getCategories(req.user.id);
-
       res.json({
         success: true,
         message: "Categories retrieved successfully",
@@ -62,7 +125,7 @@ router.get(
   })
 );
 
-// Get recent transactions (must be before /:id route)
+// Get recent transactions
 router.get(
   "/recent/:limit?",
   validateParams(
@@ -90,16 +153,15 @@ router.get(
   })
 );
 
-// Get transaction statistics (must be before /:id route)
+// Get transaction statistics (overview)
 router.get(
   "/stats/overview",
   validateRequest(transactionQuerySchema, "query"),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     try {
       const { Transaction } = await import("../models/Transaction.js");
       const { startDate, endDate } = req.query;
 
-      // Default to current month if no dates provided
       const start =
         startDate ||
         new Date(new Date().getFullYear(), new Date().getMonth(), 1)
@@ -108,14 +170,13 @@ router.get(
       const end = endDate || new Date().toISOString().split("T")[0];
 
       const stats = await Transaction.getStats(req.user.id, start, end);
-
       res.json({
         success: true,
         message: "Transaction statistics retrieved successfully",
         data: { stats },
       });
     } catch (error) {
-      throw error;
+      next(error); // Pass to global error handler
     }
   })
 );
@@ -127,14 +188,7 @@ router.post(
   asyncHandler(TransactionController.create)
 );
 
-// Get all transactions with filtering and pagination
-router.get(
-  "/",
-  validateRequest(transactionQuerySchema, "query"),
-  asyncHandler(TransactionController.getAll)
-);
-
-// Bulk operations route (must be before /:id route)
+// Bulk import transactions
 router.post(
   "/bulk",
   validateRequest(
@@ -143,18 +197,16 @@ router.post(
         .items(transactionSchema)
         .min(1)
         .max(100)
-        .required()
         .messages({
           "array.min": "At least one transaction is required",
           "array.max": "Cannot process more than 100 transactions at once",
         }),
     })
   ),
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     try {
       const { Transaction } = await import("../models/Transaction.js");
       const { transactions } = req.body;
-
       const results = [];
       const errors = [];
 
@@ -164,7 +216,6 @@ router.post(
             ...transactions[i],
             user_id: req.user.id,
           };
-
           const transactionId = await Transaction.create(transactionData);
           const transaction = await Transaction.findById(transactionId);
           results.push({ index: i, transaction });
@@ -184,12 +235,15 @@ router.post(
         },
       });
     } catch (error) {
-      throw error;
+      next(error); // Pass to global error handler
     }
   })
 );
 
-// Get single transaction by ID (must be after all specific routes)
+// Get all transactions with filtering and pagination
+router.get("/", asyncHandler(TransactionController.getAll));
+
+// Get single transaction by ID
 router.get(
   "/:id",
   validateParams(idParamSchema),
@@ -198,14 +252,6 @@ router.get(
 
 // Update transaction
 router.put(
-  "/:id",
-  validateParams(idParamSchema),
-  validateRequest(updateTransactionSchema),
-  asyncHandler(TransactionController.update)
-);
-
-// Partial update transaction (PATCH)
-router.patch(
   "/:id",
   validateParams(idParamSchema),
   validateRequest(updateTransactionSchema),

@@ -6,26 +6,23 @@ import {
 } from "../middleware/multer.js";
 import path from "path";
 import fs from "fs/promises";
-import ocrService from "../services/ocrServices.js"; // Import ocrService
-import { AppError } from "../middleware/errorHandler.js"; // Ensure AppError is imported
+import ocrService from "../services/ocrServices.js";
+import { AppError, asyncHandler } from "../middleware/errorHandler.js"; // Ensure AppError and asyncHandler are imported
 
 export class ReceiptController {
   // Upload single receipt
   static async upload(req, res, next) {
-    // Added 'next' for error handling
-    let receiptId; // Declare receiptId here to be accessible in catch block
+    let receiptId;
     try {
       if (!req.file) {
         throw new AppError(
           "No file uploaded. Please select a receipt file.",
           400
-        ); // Use AppError
+        );
       }
 
-      // Validate uploaded file
       validateUploadedFile(req.file);
 
-      // Create receipt record in database (initially pending)
       const receiptData = {
         user_id: req.user.id,
         filename: req.file.filename,
@@ -33,14 +30,13 @@ export class ReceiptController {
         file_path: req.file.path,
         file_size: req.file.size,
         mime_type: req.file.mimetype,
-        parsed_data: null, // Will be updated after OCR
+        parsed_data: null,
         processing_status: "pending",
       };
 
-      receiptId = await Receipt.create(receiptData); //
-      let receipt = await Receipt.findById(receiptId); //
+      receiptId = await Receipt.create(receiptData);
+      let receipt = await Receipt.findById(receiptId);
 
-      // Send initial response quickly, as processing happens in background
       res.status(201).json({
         success: true,
         message: "Receipt uploaded successfully. Processing in background...",
@@ -48,34 +44,48 @@ export class ReceiptController {
       });
 
       // --- Asynchronous OCR Processing ---
-      // Mark as processing immediately in DB
-      await Receipt.update(receipt.id, { processing_status: "processing" });
+      // Use a separate async block to not hold up the response
+      (async () => {
+        try {
+          await Receipt.update(receipt.id, { processing_status: "processing" });
+          const ocrResult = await ocrService.processReceipt(req.file.path);
+          const extractedData = ocrService.extractReceiptData(ocrResult);
 
-      const ocrResult = await ocrService.processReceipt(req.file.path);
-      const extractedData = ocrService.extractReceiptData(ocrResult);
-
-      if (extractedData) {
-        await Receipt.update(receipt.id, {
-          parsed_data: extractedData,
-          processing_status: "completed",
-        });
-        console.log(`OCR processing completed for receipt ID: ${receipt.id}`);
-      } else {
-        await Receipt.update(receipt.id, {
-          processing_status: "failed",
-          parsed_data: { error: "OCR extraction failed or returned no data" },
-        });
-        console.warn(`OCR extraction failed for receipt ID: ${receipt.id}`);
-      }
-
-      // Cleanup the temporary uploaded file after processing
-      await cleanupTempFiles([req.file]);
+          if (extractedData) {
+            await Receipt.update(receipt.id, {
+              parsed_data: extractedData,
+              processing_status: "completed",
+            });
+            console.log(
+              `OCR processing completed for receipt ID: ${receipt.id}`
+            );
+          } else {
+            await Receipt.update(receipt.id, {
+              processing_status: "failed",
+              parsed_data: {
+                error: "OCR extraction failed or returned no data",
+              },
+            });
+            console.warn(`OCR extraction failed for receipt ID: ${receipt.id}`);
+          }
+        } catch (ocrError) {
+          console.error(
+            `Error during OCR processing for receipt ID ${receipt.id}:`,
+            ocrError
+          );
+          await Receipt.update(receipt.id, {
+            processing_status: "failed",
+            parsed_data: { error: ocrError.message || "OCR processing failed" },
+          });
+        } finally {
+          // Ensure cleanup of the temporary uploaded file
+          await cleanupTempFiles([req.file]);
+        }
+      })();
     } catch (error) {
-      // Cleanup uploaded file on error, if it exists
       if (req.file) {
         await cleanupTempFiles([req.file]);
       }
-      // If a receipt record was created, mark it as failed
       if (receiptId) {
         try {
           await Receipt.update(receiptId, {
@@ -92,9 +102,7 @@ export class ReceiptController {
           );
         }
       }
-
       console.error("Upload receipt error:", error);
-      // Pass the error to the global error handler
       next(
         new AppError("Failed to upload or process receipt", 500, false, {
           error: error.message,
@@ -105,19 +113,17 @@ export class ReceiptController {
 
   // Upload multiple receipts - Similar asynchronous processing
   static async uploadMultiple(req, res, next) {
-    // Added 'next'
     if (!req.files || req.files.length === 0) {
       throw new AppError(
         "No files uploaded. Please select receipt files.",
         400
-      ); // Use AppError
+      );
     }
 
     const initialReceipts = [];
     const processingPromises = [];
     const errors = [];
 
-    // Process each file
     for (const file of req.files) {
       try {
         validateUploadedFile(file);
@@ -137,7 +143,6 @@ export class ReceiptController {
         const receipt = await Receipt.findById(receiptId);
         initialReceipts.push(receipt);
 
-        // Add OCR processing to promises array for asynchronous execution
         processingPromises.push(
           (async () => {
             try {
@@ -172,7 +177,6 @@ export class ReceiptController {
                 },
               });
             } finally {
-              // Always clean up the temporary file after processing, regardless of success or failure
               await cleanupTempFiles([file]);
             }
           })()
@@ -182,12 +186,10 @@ export class ReceiptController {
           filename: file.originalname,
           error: error.message,
         });
-        // Cleanup failed file immediately
         await cleanupTempFiles([file]);
       }
     }
 
-    // Send initial response before all OCR processing is complete
     res.status(201).json({
       success: true,
       message: `${initialReceipts.length} receipts uploaded. Processing in background...`,
@@ -195,27 +197,25 @@ export class ReceiptController {
         receipts: initialReceipts,
         totalUploaded: initialReceipts.length,
         totalFiles: req.files.length,
-        uploadErrors: errors, // Report immediate upload errors
+        uploadErrors: errors,
       },
     });
-
-    // Wait for all OCR processing to finish (optional, as response is already sent)
-    // await Promise.allSettled(processingPromises);
+    // Don't await Promise.all here, let them run in the background
   }
 
-  // Get user receipts
+  // Get all receipts for user
   static async getAll(req, res, next) {
     try {
-      const { page = 1, limit = 10, status } = req.query; // Added status filter
+      const { page = 1, limit = 10, status } = req.query;
       const offset = (page - 1) * limit;
 
       const receipts = await Receipt.getByUserId(req.user.id, {
         limit: parseInt(limit),
         offset: parseInt(offset),
-        status: status, // Pass status to model method
+        status: status,
       });
 
-      const totalCount = await Receipt.getCountByUserId(req.user.id, status); // Pass status to count method
+      const totalCount = await Receipt.getCountByUserId(req.user.id, status);
 
       const totalPages = Math.ceil(totalCount / limit);
 
@@ -237,28 +237,27 @@ export class ReceiptController {
         new AppError("Failed to retrieve receipts", 500, false, {
           error: error.message,
         })
-      ); // Use AppError
+      );
     }
   }
 
-  // Get receipt by ID
+  // Get receipt by ID (Used for polling status and getting parsed data)
   static async getById(req, res, next) {
     try {
       const { id } = req.params;
       const receipt = await Receipt.findById(id);
 
       if (!receipt) {
-        return next(new AppError("Receipt not found", 404)); // Use AppError
+        return next(new AppError("Receipt not found", 404));
       }
 
-      // Check if receipt belongs to the authenticated user
       if (receipt.user_id !== req.user.id) {
         return next(
           new AppError(
             "Access denied. You can only access your own receipts.",
             403
           )
-        ); // Use AppError
+        );
       }
 
       res.json({
@@ -272,7 +271,49 @@ export class ReceiptController {
         new AppError("Failed to retrieve receipt", 500, false, {
           error: error.message,
         })
-      ); // Use AppError
+      );
+    }
+  }
+
+  // Update a receipt's parsed data and status (e.g., after user edit and submission)
+  static async updateReceiptData(req, res, next) {
+    try {
+      const { id } = req.params;
+      const { parsed_data, processing_status } = req.body; // Expect updated parsed_data and/or status
+
+      const receipt = await Receipt.findById(id);
+
+      if (!receipt) {
+        return next(new AppError("Receipt not found", 404));
+      }
+
+      if (receipt.user_id !== req.user.id) {
+        return next(
+          new AppError(
+            "Access denied. You can only update your own receipts.",
+            403
+          )
+        );
+      }
+
+      const updatedReceipt = await Receipt.update(id, {
+        parsed_data:
+          parsed_data !== undefined ? parsed_data : receipt.parsed_data,
+        processing_status: processing_status || receipt.processing_status,
+      });
+
+      res.json({
+        success: true,
+        message: "Receipt data updated successfully",
+        data: { receipt: updatedReceipt },
+      });
+    } catch (error) {
+      console.error("Update receipt data error:", error);
+      next(
+        new AppError("Failed to update receipt data", 500, false, {
+          error: error.message,
+        })
+      );
     }
   }
 
@@ -283,7 +324,7 @@ export class ReceiptController {
       const receipt = await Receipt.findById(id);
 
       if (!receipt) {
-        return next(new AppError("Receipt not found", 404)); // Use AppError
+        return next(new AppError("Receipt not found", 404));
       }
 
       if (receipt.user_id !== req.user.id) {
@@ -292,7 +333,7 @@ export class ReceiptController {
             "Access denied. You can only delete your own receipts.",
             403
           )
-        ); // Use AppError
+        );
       }
 
       try {
@@ -317,7 +358,7 @@ export class ReceiptController {
         new AppError("Failed to delete receipt", 500, false, {
           error: error.message,
         })
-      ); // Use AppError
+      );
     }
   }
 
@@ -328,17 +369,17 @@ export class ReceiptController {
       const receipt = await Receipt.findById(id);
 
       if (!receipt) {
-        return next(new AppError("Receipt not found", 404)); // Use AppError
+        return next(new AppError("Receipt not found", 404));
       }
 
       if (receipt.user_id !== req.user.id) {
-        return next(new AppError("Access denied", 403)); // Use AppError
+        return next(new AppError("Access denied", 403));
       }
 
       try {
         await fs.access(receipt.file_path);
       } catch {
-        return next(new AppError("File not found", 404)); // Use AppError
+        return next(new AppError("File not found", 404));
       }
 
       res.setHeader("Content-Type", receipt.mime_type);
@@ -354,7 +395,7 @@ export class ReceiptController {
         new AppError("Failed to serve file", 500, false, {
           error: error.message,
         })
-      ); // Use AppError
+      );
     }
   }
 }

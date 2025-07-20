@@ -1,5 +1,6 @@
 // backend/src/models/Receipt.js
 import { executeQuery } from "../config/database.js";
+import { AppError } from "../middleware/errorHandler.js"; // Import AppError
 
 export class Receipt {
   constructor(data) {
@@ -31,24 +32,32 @@ export class Receipt {
 
     const query = `
       INSERT INTO receipts (
-        user_id, filename, original_filename, file_path, 
+        user_id, filename, original_filename, file_path,
         file_size, mime_type, parsed_data, processing_status
       )
       VALUES (?, ?, ?, ?, ?, ?, ?, ?)
     `;
 
-    const result = await executeQuery(query, [
-      user_id,
-      filename,
-      original_filename,
-      file_path,
-      file_size,
-      mime_type,
-      parsed_data ? JSON.stringify(parsed_data) : null,
-      processing_status,
-    ]);
-
-    return result.insertId;
+    try {
+      const result = await executeQuery(query, [
+        user_id,
+        filename,
+        original_filename,
+        file_path,
+        file_size,
+        mime_type,
+        parsed_data ? JSON.stringify(parsed_data) : null,
+        processing_status,
+      ]);
+      return result.insertId;
+    } catch (error) {
+      throw new AppError(
+        `Failed to create receipt record: ${error.message}`,
+        500,
+        false,
+        error
+      );
+    }
   }
 
   // Get receipts by user ID with optional status filter
@@ -64,15 +73,33 @@ export class Receipt {
     query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
     params.push(filters.limit || 10, filters.offset || 0);
 
-    const rows = await executeQuery(query, params);
-    return rows.map((row) => new Receipt(row));
+    try {
+      const rows = await executeQuery(query, params);
+      return rows.map((row) => new Receipt(row));
+    } catch (error) {
+      throw new AppError(
+        `Failed to retrieve receipts for user: ${error.message}`,
+        500,
+        false,
+        error
+      );
+    }
   }
 
   // Find receipt by ID
   static async findById(id) {
     const query = "SELECT * FROM receipts WHERE id = ?";
-    const rows = await executeQuery(query, [id]);
-    return rows.length > 0 ? new Receipt(rows[0]) : null;
+    try {
+      const rows = await executeQuery(query, [id]);
+      return rows.length > 0 ? new Receipt(rows[0]) : null;
+    } catch (error) {
+      throw new AppError(
+        `Failed to find receipt by ID: ${error.message}`,
+        500,
+        false,
+        error
+      );
+    }
   }
 
   // Update receipt
@@ -93,7 +120,6 @@ export class Receipt {
     }
 
     if (updateFields.length === 0) {
-      // No fields to update, fetch and return current state
       return await Receipt.findById(id);
     }
 
@@ -101,20 +127,38 @@ export class Receipt {
     params.push(id);
 
     const query = `
-      UPDATE receipts 
+      UPDATE receipts
       SET ${updateFields.join(", ")}
       WHERE id = ?
     `;
 
-    await executeQuery(query, params);
-    return await Receipt.findById(id);
+    try {
+      await executeQuery(query, params);
+      return await Receipt.findById(id);
+    } catch (error) {
+      throw new AppError(
+        `Failed to update receipt: ${error.message}`,
+        500,
+        false,
+        error
+      );
+    }
   }
 
   // Delete receipt
   static async delete(id) {
     const query = "DELETE FROM receipts WHERE id = ?";
-    const result = await executeQuery(query, [id]);
-    return result.affectedRows > 0;
+    try {
+      const result = await executeQuery(query, [id]);
+      return result.affectedRows > 0;
+    } catch (error) {
+      throw new AppError(
+        `Failed to delete receipt: ${error.message}`,
+        500,
+        false,
+        error
+      );
+    }
   }
 
   // Get receipt count for user with optional status filter
@@ -127,21 +171,38 @@ export class Receipt {
       params.push(status);
     }
 
-    const rows = await executeQuery(query, params);
-    return rows[0].count;
+    try {
+      const rows = await executeQuery(query, params);
+      return rows[0].count;
+    } catch (error) {
+      throw new AppError(
+        `Failed to get receipt count: ${error.message}`,
+        500,
+        false,
+        error
+      );
+    }
   }
 
   // Get receipts by processing status
   static async getByStatus(status, limit = 10) {
     const query = `
-      SELECT * FROM receipts 
+      SELECT * FROM receipts
       WHERE processing_status = ?
       ORDER BY created_at ASC
       LIMIT ?
     `;
-
-    const rows = await executeQuery(query, [status, limit]);
-    return rows.map((row) => new Receipt(row));
+    try {
+      const rows = await executeQuery(query, [status, limit]);
+      return rows.map((row) => new Receipt(row));
+    } catch (error) {
+      throw new AppError(
+        `Failed to get receipts by status: ${error.message}`,
+        500,
+        false,
+        error
+      );
+    }
   }
 
   // Mark as processing

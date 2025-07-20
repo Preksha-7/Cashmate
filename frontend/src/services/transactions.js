@@ -28,7 +28,7 @@ export const transactionService = {
   createTransaction: async (transactionData) => {
     try {
       const response = await apiService.post("/transactions", transactionData);
-      return response.data.transaction;
+      return response.data.transaction; // Returns the created transaction object
     } catch (error) {
       console.error("Error creating transaction:", error);
       throw error;
@@ -64,7 +64,7 @@ export const transactionService = {
   getSummary: async (params = {}) => {
     try {
       const response = await apiService.get("/transactions/summary", params);
-      return response;
+      return response; // Response contains { success, message, summary }
     } catch (error) {
       console.error("Error fetching summary:", error);
       throw error;
@@ -75,7 +75,7 @@ export const transactionService = {
   getByCategory: async (params = {}) => {
     try {
       const response = await apiService.get("/transactions/categories", params);
-      return response;
+      return response; // Response contains { success, message, categories }
     } catch (error) {
       console.error("Error fetching by category:", error);
       throw error;
@@ -89,18 +89,18 @@ export const transactionService = {
         "/transactions/monthly-summary",
         params
       );
-      return response;
+      return response; // Response contains { success, message, monthlyData }
     } catch (error) {
       console.error("Error fetching monthly summary:", error);
       throw error;
     }
   },
 
-  // Get categories
+  // Get categories (unique categories from user's transactions)
   getCategories: async () => {
     try {
       const response = await apiService.get("/transactions/meta/categories");
-      return response.data.categories;
+      return response.data.categories; // Accesses response.data.categories
     } catch (error) {
       console.error("Error fetching categories:", error);
       throw error;
@@ -132,26 +132,26 @@ export const transactionService = {
     }
   },
 
-  // Bulk import transactions
+  // Bulk import transactions (for bank statements)
   bulkImport: async (transactions) => {
     try {
-      const response = await apiService.post("/transactions/bulk", {
+      const response = await api.service.post("/transactions/bulk", {
         transactions,
       });
-      return response;
+      return response; // Response should contain results, errors, etc.
     } catch (error) {
       console.error("Error bulk importing transactions:", error);
       throw error;
     }
   },
 
-  // Export transactions
+  // Export transactions (if implemented)
   exportTransactions: async (params = {}) => {
     try {
-      const response = await apiService.download(
+      const response = await api.service.download(
         "/transactions/export",
-        "transactions.csv"
-      );
+        params
+      ); // Assuming a download method in apiService
       return response;
     } catch (error) {
       console.error("Error exporting transactions:", error);
