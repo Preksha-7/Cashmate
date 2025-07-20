@@ -193,3 +193,8 @@ export class StartupManager {
 }
 
 export const startupManager = new StartupManager();
+
+export async function ensureDirectoriesExist() {
+  const startup = new StartupManager();
+  await startup.ensureDirectories();
+}

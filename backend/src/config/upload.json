@@ -1,0 +1,26 @@
+{
+  "maxFileSize": 10485760,
+  "maxFiles": 5,
+  "allowedMimeTypes": [
+    "image/jpeg",
+    "image/jpg",
+    "image/png",
+    "image/webp",
+    "application/pdf",
+    "image/heic",
+    "image/heif"
+  ],
+  "allowedExtensions": [
+    ".jpg",
+    ".jpeg",
+    ".png",
+    ".webp",
+    ".pdf",
+    ".heic",
+    ".heif"
+  ],
+  "cleanupInterval": 3600000,
+  "fileMaxAge": 86400000,
+  "uploadPath": "C:\\Users\\Dell\\Desktop\\Cashmate\\backend\\uploads",
+  "tempPath": "C:\\Users\\Dell\\Desktop\\Cashmate\\backend\\temp"
+}

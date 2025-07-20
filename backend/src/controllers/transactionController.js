@@ -6,7 +6,9 @@ export const getTransactions = async (req, res) => {
     const userId = req.user.id;
     const { page = 1, limit = 10, start, end } = req.query;
 
-    const query = { user_id: userId };
+    const offset = (page - 1) * limit;
+    let query = { user_id: userId };
+
     if (start && end) {
       query.date = {
         $gte: new Date(start),
@@ -16,19 +18,19 @@ export const getTransactions = async (req, res) => {
 
     const transactions = await Transaction.find(query)
       .sort({ date: -1 })
-      .skip((page - 1) * limit)
+      .skip(offset)
       .limit(parseInt(limit));
 
     const total = await Transaction.countDocuments(query);
 
-    res.json({
-      total,
+    res.status(200).json({
       page: parseInt(page),
       limit: parseInt(limit),
+      total,
       data: transactions,
     });
-  } catch (err) {
-    res.status(500).json({ error: err.message });
+  } catch (error) {
+    res.status(500).json({ message: error.message });
   }
 };
 
@@ -370,3 +372,7 @@ export class TransactionController {
     }
   }
 }
+
+export const addTransaction = TransactionController.create;
+export const updateTransaction = TransactionController.update;
+export const deleteTransaction = TransactionController.delete;

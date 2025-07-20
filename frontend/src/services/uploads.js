@@ -110,3 +110,5 @@ export const uploadService = {
     }
   },
 };
+
+export const uploadReceipt = uploadService.uploadReceipt;

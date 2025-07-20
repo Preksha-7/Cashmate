@@ -5,7 +5,7 @@
 
 @layer base {
   * {
-    @apply border-border;
+    @apply border-gray-300;
   }
 
   body {
@@ -107,7 +107,7 @@
 
 /* React DatePicker custom styles */
 .react-datepicker-wrapper {
-  @apply w-full;
+  width: 100%;
 }
 
 .react-datepicker__input-container input {

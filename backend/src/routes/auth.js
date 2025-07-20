@@ -1,37 +1,36 @@
-// backend/src/routes/auth.js
 import express from "express";
-import * as authController from "../controllers/authController.js";
-import { validateSignup, validateLogin } from "../middleware/validate.js";
-import { AuthController } from "../controllers/authController.js";
 import {
-  validateRequest,
-  registerSchema,
   loginSchema,
+  registerSchema,
   refreshTokenSchema,
+  validateRequest,
 } from "../middleware/validation.js";
 import { authenticateToken } from "../middleware/auth.js";
+import {
+  login,
+  register,
+  refreshAccessToken,
+  logout,
+  getProfile,
+  updateProfile,
+  changePassword,
+} from "../controllers/authController.js";
 
 const router = express.Router();
 
 // Public routes
-router.post(
-  "/register",
-  validateRequest(registerSchema),
-  AuthController.register
-);
-router.post("/login", validateRequest(loginSchema), AuthController.login);
+router.post("/register", validateRequest(registerSchema), register);
+router.post("/login", validateRequest(loginSchema), login);
 router.post(
   "/refresh",
   validateRequest(refreshTokenSchema),
-  AuthController.refreshToken
+  refreshAccessToken
 );
-router.post("/logout", AuthController.logout);
+router.post("/logout", logout);
 
 // Protected routes
-router.get("/profile", authenticateToken, AuthController.getProfile);
-router.put("/profile", authenticateToken, AuthController.updateProfile);
-
-router.post("/signup", validateSignup, authController.signup);
-router.post("/login", validateLogin, authController.login);
+router.get("/profile", authenticateToken, getProfile);
+router.put("/profile", authenticateToken, updateProfile);
+router.post("/change-password", authenticateToken, changePassword);
 
 export default router;

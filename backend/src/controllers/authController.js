@@ -214,3 +214,12 @@ export class AuthController {
     }
   }
 }
+
+// ✅ Export static class methods as named exports
+export const login = AuthController.login;
+export const register = AuthController.register;
+export const refreshAccessToken = AuthController.refreshToken;
+export const logout = AuthController.logout;
+export const getProfile = AuthController.getProfile;
+export const updateProfile = AuthController.updateProfile;
+export const changePassword = AuthController.changePassword;
