@@ -1,8 +1,11 @@
 import axios from "axios";
 
 // Base API configuration
+// Use the proxy when in development, full URL in production
 const API_BASE_URL =
-  process.env.REACT_APP_API_BASE_URL || "http://localhost:5000/api";
+  process.env.NODE_ENV === "production"
+    ? process.env.REACT_APP_API_BASE_URL
+    : "/api"; // This will use the proxy
 
 // Create axios instance
 const api = axios.create({
@@ -20,9 +23,20 @@ api.interceptors.request.use(
     if (token) {
       config.headers.Authorization = `Bearer ${token}`;
     }
+
+    // Add debug logging
+    console.log("API Request:", {
+      method: config.method,
+      url: config.url,
+      baseURL: config.baseURL,
+      fullURL: `${config.baseURL}${config.url}`,
+      headers: config.headers,
+    });
+
     return config;
   },
   (error) => {
+    console.error("Request interceptor error:", error);
     return Promise.reject(error);
   }
 );
@@ -30,10 +44,30 @@ api.interceptors.request.use(
 // Response interceptor to handle token refresh and errors
 api.interceptors.response.use(
   (response) => {
+    console.log("API Response:", {
+      status: response.status,
+      url: response.config.url,
+      data: response.data,
+    });
     return response;
   },
   async (error) => {
+    console.error("API Error:", {
+      status: error.response?.status,
+      statusText: error.response?.statusText,
+      url: error.config?.url,
+      message: error.message,
+      data: error.response?.data,
+    });
+
     const originalRequest = error.config;
+
+    // Handle 429 errors (rate limit) - wait and retry
+    if (error.response?.status === 429) {
+      console.warn("Rate limit hit, retrying after delay...");
+      await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
+      return api(originalRequest);
+    }
 
     // Handle 401 errors (unauthorized)
     if (error.response?.status === 401 && !originalRequest._retry) {

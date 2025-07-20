@@ -35,44 +35,91 @@ app.use(
   })
 );
 
-// Rate limiting
+// Rate limiting - more lenient in development
+const isDevelopment = process.env.NODE_ENV === "development";
+
 const limiter = rateLimit({
-  windowMs: 15 * 60 * 1000,
-  max: 100,
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: isDevelopment ? 1000 : 100, // Much higher limit in development
+  message: {
+    error: "Too many requests",
+    message: "Too many requests, please try again later.",
+  },
+  standardHeaders: true,
+  legacyHeaders: false,
+  // Skip rate limiting in development for localhost
+  skip: (req) => {
+    return (
+      isDevelopment &&
+      (req.ip === "127.0.0.1" ||
+        req.ip === "::1" ||
+        req.ip?.includes("localhost"))
+    );
+  },
 });
+
 app.use("/api/", limiter);
 
 // Stricter rate limiting for auth endpoints
 const authLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 10, // Increased from 5 to allow for refresh token requests
+  max: isDevelopment ? 100 : 10, // More lenient in development
   message: {
     error: "Too many authentication attempts",
     message: "Too many authentication attempts, please try again later.",
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    return (
+      isDevelopment &&
+      (req.ip === "127.0.0.1" ||
+        req.ip === "::1" ||
+        req.ip?.includes("localhost"))
+    );
+  },
 });
 
 // Upload rate limiting for receipt endpoints
 const uploadLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
-  max: 20, // Allow 20 uploads per 15 minutes
+  max: isDevelopment ? 200 : 20, // More lenient in development
   message: {
     error: "Too many upload attempts",
     message: "Too many upload attempts, please try again later.",
   },
   standardHeaders: true,
   legacyHeaders: false,
+  skip: (req) => {
+    return (
+      isDevelopment &&
+      (req.ip === "127.0.0.1" ||
+        req.ip === "::1" ||
+        req.ip?.includes("localhost"))
+    );
+  },
 });
 
 // Body parsing middleware
 app.use(express.json({ limit: "10mb" }));
 app.use(express.urlencoded({ extended: true, limit: "10mb" }));
 
-// Logging middleware
+// Logging middleware with more details in development
 if (process.env.NODE_ENV === "development") {
   app.use(morgan("dev"));
+
+  // Additional logging for debugging
+  app.use((req, res, next) => {
+    console.log(`${new Date().toISOString()} - ${req.method} ${req.path}`, {
+      ip: req.ip,
+      userAgent: req.get("User-Agent")?.substring(0, 50),
+      headers: {
+        authorization: req.headers.authorization ? "Bearer [token]" : "None",
+        "content-type": req.headers["content-type"],
+      },
+    });
+    next();
+  });
 } else {
   app.use(morgan("combined"));
 }
