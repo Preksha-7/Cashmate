@@ -176,6 +176,7 @@ export const apiService = {
   get: async (endpoint, params = {}) => {
     try {
       const response = await api.get(endpoint, { params });
+      console.log(`apiService.get('${endpoint}') returning:`, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -186,6 +187,7 @@ export const apiService = {
   post: async (endpoint, data = {}) => {
     try {
       const response = await api.post(endpoint, data);
+      console.log(`apiService.post('${endpoint}') returning:`, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -196,6 +198,7 @@ export const apiService = {
   put: async (endpoint, data = {}) => {
     try {
       const response = await api.put(endpoint, data);
+      console.log(`apiService.put('${endpoint}') returning:`, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -206,6 +209,7 @@ export const apiService = {
   delete: async (endpoint) => {
     try {
       const response = await api.delete(endpoint);
+      console.log(`apiService.delete('${endpoint}') returning:`, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -221,6 +225,7 @@ export const apiService = {
         },
         onUploadProgress,
       });
+      console.log(`apiService.upload('${endpoint}') returning:`, response.data);
       return response.data;
     } catch (error) {
       throw error;
@@ -244,6 +249,9 @@ export const apiService = {
       link.remove();
       window.URL.revokeObjectURL(url);
 
+      console.log(
+        `apiService.download('${endpoint}') returning blob for ${filename}`
+      );
       return response.data;
     } catch (error) {
       throw error;

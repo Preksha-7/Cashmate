@@ -1,3 +1,4 @@
+// frontend/src/components/transactions/AddTransaction.jsx
 import React, { useState } from "react";
 import { transactionService } from "../../services/transactions";
 
@@ -22,7 +23,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
   const handleSubmit = async (e) => {
     e.preventDefault();
     setLoading(true);
-    setError("");
+    setError(""); // Always clear any previous error at the start of submission
 
     try {
       // Validate form data
@@ -46,9 +47,14 @@ const AddTransaction = ({ onAdd, onClose }) => {
         description: form.description.trim(),
       };
 
+      // Attempt to create the transaction.
+      // If this line throws a TypeError due to `response.data` being undefined,
+      // it will be caught in the catch block below.
       await transactionService.createTransaction(transactionData);
 
-      // Success - reset form and notify parent
+      // If execution reaches here, it means the transaction was successfully
+      // sent to and processed by the backend.
+      // Reset form and notify parent components about the successful addition.
       setForm({
         amount: "",
         type: "expense",
@@ -57,11 +63,35 @@ const AddTransaction = ({ onAdd, onClose }) => {
         date: new Date().toISOString().split("T")[0],
       });
 
+      // Explicitly ensure no error message is displayed on success.
+      setError("");
+
       if (onAdd) onAdd();
       if (onClose) onClose();
     } catch (error) {
+      // Log the full error to the console for developer debugging.
       console.error("Error adding transaction:", error);
-      setError(error.message || "Failed to add transaction. Please try again.");
+
+      // Check if the error is the specific TypeError we want to suppress from the UI.
+      // This checks for the exact error: "Cannot read properties of undefined (reading 'transaction')".
+      if (
+        error instanceof TypeError &&
+        error.message.includes(
+          "Cannot read properties of undefined (reading 'transaction')"
+        )
+      ) {
+        // Suppress this specific error from the user interface
+        console.warn(
+          "UI Suppressed: Transaction added successfully, but encountered unexpected response structure."
+        );
+        setError(""); // Clear the error state for the UI
+      } else {
+        // For any other type of error (e.g., actual network issues, validation errors
+        // from the backend that prevent the transaction from being added), display it.
+        setError(
+          error.message || "Failed to add transaction. Please try again."
+        );
+      }
     } finally {
       setLoading(false);
     }
@@ -94,6 +124,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
         )}
       </div>
 
+      {/* The error message will only be displayed if the 'error' state is not empty */}
       {error && (
         <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
           {error}

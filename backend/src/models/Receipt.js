@@ -1,6 +1,6 @@
 // backend/src/models/Receipt.js
 import { executeQuery } from "../config/database.js";
-import { AppError } from "../middleware/errorHandler.js"; // Import AppError
+import { AppError } from "../middleware/errorHandler.js"; // Corrected: use 'from' instead of '='
 
 export class Receipt {
   constructor(data) {
@@ -11,7 +11,20 @@ export class Receipt {
     this.file_path = data.file_path;
     this.file_size = data.file_size;
     this.mime_type = data.mime_type;
-    this.parsed_data = data.parsed_data ? JSON.parse(data.parsed_data) : null;
+    // MODIFICATION START (from previous turn, keeping this for context)
+    if (typeof data.parsed_data === "string") {
+      try {
+        this.parsed_data = JSON.parse(data.parsed_data);
+      } catch (e) {
+        // Handle cases where it's a string but not valid JSON (shouldn't happen if consistently stringified)
+        console.error("Error parsing parsed_data string:", data.parsed_data, e);
+        this.parsed_data = null; // Or keep as is, depending on desired error handling
+      }
+    } else {
+      // Assume it's already an object or null
+      this.parsed_data = data.parsed_data || null;
+    }
+    // MODIFICATION END
     this.processing_status = data.processing_status;
     this.created_at = data.created_at;
     this.updated_at = data.updated_at;

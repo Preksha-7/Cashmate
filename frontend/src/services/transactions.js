@@ -28,7 +28,7 @@ export const transactionService = {
   createTransaction: async (transactionData) => {
     try {
       const response = await apiService.post("/transactions", transactionData);
-      return response.data.transaction; // Returns the created transaction object
+      return response.transaction; // Corrected line: access transaction directly from response
     } catch (error) {
       console.error("Error creating transaction:", error);
       throw error;
@@ -135,7 +135,7 @@ export const transactionService = {
   // Bulk import transactions (for bank statements)
   bulkImport: async (transactions) => {
     try {
-      const response = await api.service.post("/transactions/bulk", {
+      const response = await apiService.post("/transactions/bulk", {
         transactions,
       });
       return response; // Response should contain results, errors, etc.
@@ -148,7 +148,7 @@ export const transactionService = {
   // Export transactions (if implemented)
   exportTransactions: async (params = {}) => {
     try {
-      const response = await api.service.download(
+      const response = await apiService.download(
         "/transactions/export",
         params
       ); // Assuming a download method in apiService
