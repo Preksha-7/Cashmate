@@ -10,16 +10,19 @@ const Header = () => {
   const navigate = useNavigate();
 
   const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: "📊" },
-    { name: "Transactions", href: "/transactions", icon: "💰" },
-    { name: "Upload", href: "/upload", icon: "📤" },
-    { name: "Reports", href: "/transactions", icon: "📈" }, // Explicit Reports link
-    { name: "Settings", href: "/settings", icon: "⚙️" },
+    { name: "Dashboard", href: "/dashboard", icon: "投" },
+    { name: "Transactions", href: "/transactions", icon: "腸" },
+    { name: "Upload", href: "/upload", icon: "豆" },
   ];
 
   const handleLogout = async () => {
     await logout();
     navigate("/login");
+  };
+
+  const handleProfileSettings = () => {
+    navigate("/settings"); // Navigate to a dedicated settings page
+    setIsUserMenuOpen(false);
   };
 
   const isActive = (path) => location.pathname === path;
@@ -102,13 +105,12 @@ const Header = () => {
                     </p>
                     <p className="text-xs text-gray-400">{user?.email}</p>
                   </div>
-                  <Link
-                    to="/settings"
-                    className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
-                    onClick={() => setIsUserMenuOpen(false)}
+                  <button
+                    onClick={handleProfileSettings}
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                   >
                     Profile Settings
-                  </Link>
+                  </button>
                   <button
                     onClick={handleLogout}
                     className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
@@ -183,6 +185,12 @@ const Header = () => {
                   <div className="text-sm text-gray-400">{user?.email}</div>
                 </div>
               </div>
+              <button
+                onClick={handleProfileSettings}
+                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-primary-700"
+              >
+                Profile Settings
+              </button>
               <button
                 onClick={handleLogout}
                 className="block w-full text-left px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-primary-700"
