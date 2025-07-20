@@ -1,17 +1,26 @@
+// File: frontend/src/pages/LoginPage.jsx
+
 import React, { useState } from "react";
-import { Link } from "react-router-dom";
-import { useAuth } from "../hooks/useAuth";
+import { Link } from "react-router-dom"; // Keep Link for navigation
+import { useAuth } from "../hooks/useAuth"; // Assuming useAuth is correctly imported from hooks
+
+// Your original LoginPage.jsx already contains the main logic for handling both login and register forms
+// This component is robust and correctly uses useAuth.
+// The previous changes to Login.jsx and Register.jsx were more about consistent styling of individual forms.
+// Since LoginPage.jsx combines them, you just need to ensure the nested Login and Register components (if separate)
+// use the new consistent styling classes.
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
+    name: "", // Keep name for register mode
     email: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [isRegister, setIsRegister] = useState(false);
+  const [isRegister, setIsRegister] = useState(false); // This state correctly determines which form to show
 
-  const { login, register, loading } = useAuth();
+  const { login, register, loading } = useAuth(); // Correctly using useAuth hook
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -35,15 +44,22 @@ const LoginPage = () => {
         setError("Password must be at least 6 characters");
         return;
       }
+    } else {
+      // Login mode validation
+      if (!formData.email || !formData.password) {
+        setError("Both email and password are required.");
+        return;
+      }
     }
 
     const result = isRegister
-      ? await register(formData)
-      : await login(formData.email, formData.password);
+      ? await register(formData) // This calls the register function from useAuth
+      : await login(formData.email, formData.password); // This calls the login function from useAuth
 
     if (!result.success) {
       setError(result.error);
     }
+    // No explicit navigation here, as useAuth context likely handles redirect on success
   };
 
   const toggleMode = () => {
@@ -52,7 +68,7 @@ const LoginPage = () => {
     setFormData({
       email: "",
       password: "",
-      name: "",
+      name: "", // Clear name when toggling mode
     });
   };
 
@@ -91,10 +107,11 @@ const LoginPage = () => {
                   name="name"
                   type="text"
                   required={isRegister}
-                  className="form-input"
+                  className="form-input" // Applying consistent style
                   placeholder="Enter your full name"
                   value={formData.name || ""}
                   onChange={handleChange}
+                  disabled={loading}
                 />
               </div>
             )}
@@ -108,10 +125,11 @@ const LoginPage = () => {
                 name="email"
                 type="email"
                 required
-                className="form-input"
+                className="form-input" // Applying consistent style
                 placeholder="Enter your email"
                 value={formData.email}
                 onChange={handleChange}
+                disabled={loading}
               />
             </div>
 
@@ -125,15 +143,17 @@ const LoginPage = () => {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  className="form-input pr-10"
+                  className="form-input pr-10" // Applying consistent style
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
+                  disabled={loading}
                 />
                 <button
                   type="button"
                   className="absolute inset-y-0 right-0 pr-3 flex items-center"
                   onClick={() => setShowPassword(!showPassword)}
+                  disabled={loading}
                 >
                   {showPassword ? (
                     <svg

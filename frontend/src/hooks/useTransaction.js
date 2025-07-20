@@ -1,3 +1,5 @@
+// File: frontend/src/hooks/useTransaction.js
+
 import { useState, useEffect, useCallback } from "react";
 import { transactionService } from "../services/transactions";
 
@@ -8,7 +10,9 @@ export const useTransactions = (filters = {}) => {
     totalExpenses: 0,
     balance: 0,
   });
-  const [loading, setLoading] = useState(false);
+  const [monthlyData, setMonthlyData] = useState([]); // NEW: State for monthly trend data
+  const [categoryData, setCategoryData] = useState([]); // NEW: State for category breakdown data
+  const [loading, setLoading] = useState(true); // Changed initial state to true to show loading on first load
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -34,6 +38,8 @@ export const useTransactions = (filters = {}) => {
       } catch (err) {
         setError(err.message || "Failed to fetch transactions");
         console.error("Error fetching transactions:", err);
+        setTransactions([]); // Clear transactions on error
+        setPagination({ page: 1, limit: 10, total: 0, totalPages: 0 }); // Reset pagination on error
       } finally {
         setLoading(false);
       }
@@ -48,6 +54,23 @@ export const useTransactions = (filters = {}) => {
       setSummary(response);
     } catch (err) {
       console.error("Error fetching summary:", err);
+      setSummary({ totalIncome: 0, totalExpenses: 0, balance: 0 }); // Reset summary on error
+    }
+  }, []);
+
+  // NEW: Fetch chart data (monthly and category)
+  const fetchChartData = useCallback(async () => {
+    try {
+      const [monthlyResponse, categoryResponse] = await Promise.all([
+        transactionService.getMonthlySummary(),
+        transactionService.getByCategory(),
+      ]);
+      setMonthlyData(monthlyResponse.data || []);
+      setCategoryData(categoryResponse.data || []);
+    } catch (error) {
+      console.error("Error loading chart data:", error);
+      setMonthlyData([]); // Clear data on error
+      setCategoryData([]); // Clear data on error
     }
   }, []);
 
@@ -62,8 +85,8 @@ export const useTransactions = (filters = {}) => {
       // Optimistically update the list
       setTransactions((prev) => [newTransaction, ...prev]);
 
-      // Refresh summary
-      await fetchSummary(filters);
+      // Refresh summary and chart data
+      await Promise.all([fetchSummary(filters), fetchChartData()]);
 
       return { success: true, data: newTransaction };
     } catch (err) {
@@ -88,8 +111,8 @@ export const useTransactions = (filters = {}) => {
         prev.map((t) => (t.id === id ? updatedTransaction : t))
       );
 
-      // Refresh summary
-      await fetchSummary(filters);
+      // Refresh summary and chart data
+      await Promise.all([fetchSummary(filters), fetchChartData()]);
 
       return { success: true, data: updatedTransaction };
     } catch (err) {
@@ -109,8 +132,8 @@ export const useTransactions = (filters = {}) => {
       // Remove transaction from list
       setTransactions((prev) => prev.filter((t) => t.id !== id));
 
-      // Refresh summary
-      await fetchSummary(filters);
+      // Refresh summary and chart data
+      await Promise.all([fetchSummary(filters), fetchChartData()]);
 
       return { success: true };
     } catch (err) {
@@ -132,18 +155,22 @@ export const useTransactions = (filters = {}) => {
   const refresh = () => {
     fetchTransactions();
     fetchSummary(filters);
+    fetchChartData(); // NEW: Refresh chart data on refresh
   };
 
-  // Initial load
+  // Initial load for all data
   useEffect(() => {
     fetchTransactions();
     fetchSummary(filters);
-  }, [fetchTransactions, fetchSummary]);
+    fetchChartData(); // NEW: Fetch chart data on initial load
+  }, [fetchTransactions, fetchSummary, fetchChartData, filters]); // Added fetchChartData to dependency array
 
   return {
     // Data
     transactions,
     summary,
+    monthlyData, // NEW: Return monthly data
+    categoryData, // NEW: Return category data
     pagination,
 
     // State

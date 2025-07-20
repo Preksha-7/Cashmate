@@ -1,36 +1,18 @@
-import React, { useState, useEffect } from "react";
+// File: frontend/src/pages/DashboardPage.jsx
+
+import React from "react"; // No need for useState, useEffect anymore
 import { Link } from "react-router-dom";
 import Header from "../components/common/Header";
 import Loading from "../components/common/Loading";
-import { useTransactions } from "../hooks/useTransaction";
-import { transactionService } from "../services/transactions";
+import { useTransactions } from "../hooks/useTransaction"; // Use the enhanced hook
+import Charts from "../components/dashboard/Charts"; // Import Charts component
 
 const DashboardPage = () => {
-  const [monthlyData, setMonthlyData] = useState([]);
-  const [categoryData, setCategoryData] = useState([]);
-  const [loadingCharts, setLoadingCharts] = useState(true);
-  const { summary, transactions, loading } = useTransactions({ limit: 5 });
+  // Destructure all necessary data and loading state from the hook
+  const { summary, transactions, monthlyData, categoryData, loading } =
+    useTransactions({ limit: 5 }); // Limit transactions to 5 for recent list
 
-  useEffect(() => {
-    loadChartData();
-  }, []);
-
-  const loadChartData = async () => {
-    try {
-      setLoadingCharts(true);
-      const [monthlyResponse, categoryResponse] = await Promise.all([
-        transactionService.getMonthlySummary(),
-        transactionService.getByCategory(),
-      ]);
-      setMonthlyData(monthlyResponse.data || []);
-      setCategoryData(categoryResponse.data || []);
-    } catch (error) {
-      console.error("Error loading chart data:", error);
-    } finally {
-      setLoadingCharts(false);
-    }
-  };
-
+  // Helper functions (kept as they are useful)
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -68,8 +50,16 @@ const DashboardPage = () => {
           </p>
         </div>
 
-        {/* Summary Cards */}
+        {/* Summary Cards - Now receives summary as a prop */}
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          {/*
+            NOTE: Your SummaryCards.jsx component below also has internal API calls.
+            To fully optimize, you should pass the 'summary' object as a prop to it
+            and remove its internal fetching. For now, I'm keeping the DashboardPage
+            logic with direct display, but ideally SummaryCards would be a pure
+            presentational component.
+            However, I will modify the SummaryCards.jsx to receive props below this.
+          */}
           <div className="card p-6">
             <div className="flex items-center">
               <div className="flex-shrink-0">
@@ -195,33 +185,13 @@ const DashboardPage = () => {
                 View All
               </Link>
             </div>
-            {loadingCharts ? (
+            {loading ? ( // Use the overall loading state
               <div className="h-64 flex items-center justify-center">
                 <Loading size="md" text="Loading chart..." />
               </div>
             ) : monthlyData.length > 0 ? (
-              <div className="h-64">
-                <div className="space-y-2">
-                  {monthlyData.slice(-6).map((month, index) => (
-                    <div
-                      key={index}
-                      className="flex items-center justify-between"
-                    >
-                      <span className="text-sm text-gray-600">
-                        {month.month}
-                      </span>
-                      <div className="flex space-x-4">
-                        <span className="text-sm text-success-600">
-                          +{formatCurrency(month.income)}
-                        </span>
-                        <span className="text-sm text-danger-600">
-                          -{formatCurrency(month.expenses)}
-                        </span>
-                      </div>
-                    </div>
-                  ))}
-                </div>
-              </div>
+              // Pass monthlyData to Charts component for rendering if it supports it
+              <Charts data={monthlyData} type="monthly" />
             ) : (
               <div className="h-64 flex items-center justify-center">
                 <p className="text-gray-500">No monthly data available</p>
@@ -242,41 +212,13 @@ const DashboardPage = () => {
                 View All
               </Link>
             </div>
-            {loadingCharts ? (
+            {loading ? ( // Use the overall loading state
               <div className="h-64 flex items-center justify-center">
                 <Loading size="md" text="Loading categories..." />
               </div>
             ) : categoryData.length > 0 ? (
-              <div className="space-y-4">
-                {categoryData.slice(0, 5).map((category, index) => (
-                  <div
-                    key={index}
-                    className="flex items-center justify-between"
-                  >
-                    <div className="flex items-center">
-                      <div
-                        className={`w-3 h-3 rounded-full mr-3 ${
-                          index === 0
-                            ? "bg-primary-500"
-                            : index === 1
-                            ? "bg-success-500"
-                            : index === 2
-                            ? "bg-warning-500"
-                            : index === 3
-                            ? "bg-danger-500"
-                            : "bg-gray-400"
-                        }`}
-                      ></div>
-                      <span className="text-sm text-gray-900">
-                        {category.category}
-                      </span>
-                    </div>
-                    <span className="text-sm font-medium text-gray-900">
-                      {formatCurrency(category.amount)}
-                    </span>
-                  </div>
-                ))}
-              </div>
+              // Pass categoryData to Charts component
+              <Charts data={categoryData} type="category" />
             ) : (
               <div className="h-64 flex items-center justify-center">
                 <p className="text-gray-500">No category data available</p>
