@@ -1,0 +1,9 @@
+node_modules/
+logs/
+*.log
+uploads/
+temp/
+.env
+db.json
+*.db
+*.sqlite
