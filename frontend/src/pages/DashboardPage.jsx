@@ -1,16 +1,21 @@
-// File: frontend/src/pages/DashboardPage.jsx
+// frontend/src/pages/DashboardPage.jsx
 
-import React from "react";
+import React, { useMemo } from "react"; // Import useMemo
 import { Link } from "react-router-dom";
 import Header from "../components/common/Header";
 import Loading from "../components/common/Loading";
 import { useTransactions } from "../hooks/useTransaction";
 import Charts from "../components/dashboard/Charts";
-import SummaryCards from "../components/dashboard/SummaryCards"; // Import SummaryCards
+import SummaryCards from "../components/dashboard/SummaryCards";
 
 const DashboardPage = () => {
+  // Memoize the filters object to prevent re-creation on every render
+  // The empty dependency array [] means this object will only be created once.
+  const memoizedFilters = useMemo(() => ({ limit: 5 }), []);
+
+  // Pass the memoized filters to the hook
   const { summary, transactions, monthlyData, categoryData, loading } =
-    useTransactions({ limit: 5 });
+    useTransactions(memoizedFilters);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
@@ -50,7 +55,6 @@ const DashboardPage = () => {
         </div>
 
         {/* Summary Cards - Now passes summary as a prop */}
-        {/* Replaced direct HTML with SummaryCards component passing the summary prop */}
         <SummaryCards summary={summary} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">

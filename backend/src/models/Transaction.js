@@ -1,5 +1,3 @@
-// backend/src/models/Transaction.js
-
 import { executeQuery } from "../config/database.js";
 import { AppError } from "../middleware/errorHandler.js";
 
@@ -87,25 +85,25 @@ export class Transaction {
   }
 
   static async getByUserId(userId, filters = {}) {
-    let baseQuery = "SELECT * FROM transactions";
+    let queryParts = ["SELECT * FROM transactions"];
     const conditions = ["user_id = ?"];
-    const params = [userId];
+    const queryParams = [userId];
 
     // Apply filters
     if (filters.startDate && filters.endDate) {
       conditions.push("date BETWEEN ? AND ?");
-      params.push(filters.startDate, filters.endDate);
+      queryParams.push(filters.startDate, filters.endDate);
     }
     if (filters.type) {
       conditions.push("type = ?");
-      params.push(filters.type);
+      queryParams.push(filters.type);
     }
     if (filters.category) {
       conditions.push("category = ?");
-      params.push(filters.category);
+      queryParams.push(filters.category);
     }
 
-    let finalQuery = `${baseQuery} WHERE ${conditions.join(" AND ")}`;
+    queryParts.push(`WHERE ${conditions.join(" AND ")}`);
 
     // Apply sorting
     const sortableFields = ["date", "amount", "category", "type", "created_at"];
@@ -113,34 +111,34 @@ export class Transaction {
       ? filters.sort
       : "date";
     const orderDirection = filters.order === "asc" ? "ASC" : "DESC";
-    finalQuery += ` ORDER BY ${orderBy} ${orderDirection}`;
+    queryParts.push(`ORDER BY ${orderBy} ${orderDirection}`);
 
-    // Apply pagination
+    // Apply pagination - INLINING LIMIT AND OFFSET
     if (filters.limit !== undefined && filters.offset !== undefined) {
-      const limitValue = Number(filters.limit); // Explicitly ensure number type
-      const offsetValue = Number(filters.offset); // Explicitly ensure number type
+      const limitValue = Math.floor(Number(filters.limit));
+      const offsetValue = Math.floor(Number(filters.offset));
 
-      // Add a sanity check to prevent issues if they somehow become non-numeric or negative
       if (
         !isNaN(limitValue) &&
         limitValue >= 0 &&
         !isNaN(offsetValue) &&
         offsetValue >= 0
       ) {
-        finalQuery += " LIMIT ? OFFSET ?";
-        params.push(limitValue, offsetValue); // Use the guaranteed numeric values
+        // Inlining limit and offset values directly into the query string
+        // This changes the number of '?' expected by mysql2 for this part
+        queryParts.push(`LIMIT ${limitValue} OFFSET ${offsetValue}`);
+        // Do NOT push to queryParams here, as they are inlined
       } else {
-        // Log a warning or throw an error if pagination values are invalid
         console.warn(
-          "Invalid pagination values received in getByUserId:",
+          "Invalid pagination values received in getByUserId (after floor):",
           filters.limit,
           filters.offset
         );
-        // Optionally, you might want to default to no limit/offset or throw an error to prevent the query from running
       }
     }
 
-    const rows = await executeQuery(finalQuery, params);
+    const finalQuery = queryParts.join(" ");
+    const rows = await executeQuery(finalQuery, queryParams); // queryParams will now have fewer elements if limit/offset are present
     return rows.map((row) => new Transaction(row));
   }
 
