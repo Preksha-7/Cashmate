@@ -1,26 +1,20 @@
 // File: frontend/src/pages/LoginPage.jsx
 
 import React, { useState } from "react";
-import { Link } from "react-router-dom"; // Keep Link for navigation
-import { useAuth } from "../hooks/useAuth"; // Assuming useAuth is correctly imported from hooks
-
-// Your original LoginPage.jsx already contains the main logic for handling both login and register forms
-// This component is robust and correctly uses useAuth.
-// The previous changes to Login.jsx and Register.jsx were more about consistent styling of individual forms.
-// Since LoginPage.jsx combines them, you just need to ensure the nested Login and Register components (if separate)
-// use the new consistent styling classes.
+import { Link, useLocation, useNavigate } from "react-router-dom";
+import { useAuth } from "../hooks/useAuth";
 
 const LoginPage = () => {
   const [formData, setFormData] = useState({
-    name: "", // Keep name for register mode
+    name: "",
     email: "",
     password: "",
   });
   const [showPassword, setShowPassword] = useState(false);
   const [error, setError] = useState("");
-  const [isRegister, setIsRegister] = useState(false); // This state correctly determines which form to show
+  const [isRegister, setIsRegister] = useState(false);
 
-  const { login, register, loading } = useAuth(); // Correctly using useAuth hook
+  const { login, register, loading } = useAuth();
 
   const handleChange = (e) => {
     const { name, value } = e.target;
@@ -53,13 +47,12 @@ const LoginPage = () => {
     }
 
     const result = isRegister
-      ? await register(formData) // This calls the register function from useAuth
-      : await login(formData.email, formData.password); // This calls the login function from useAuth
+      ? await register(formData)
+      : await login(formData.email, formData.password);
 
     if (!result.success) {
       setError(result.error);
     }
-    // No explicit navigation here, as useAuth context likely handles redirect on success
   };
 
   const toggleMode = () => {
@@ -68,32 +61,32 @@ const LoginPage = () => {
     setFormData({
       email: "",
       password: "",
-      name: "", // Clear name when toggling mode
+      name: "",
     });
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-primary-50 to-primary-100 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-primary-900 flex items-center justify-center py-12 px-4 sm:px-6 lg:px-8">
       <div className="max-w-md w-full space-y-8">
         <div className="text-center">
-          <div className="mx-auto h-16 w-16 bg-primary-600 rounded-full flex items-center justify-center">
+          <div className="mx-auto h-16 w-16 bg-primary-500 rounded-full flex items-center justify-center">
             <span className="text-white text-2xl font-bold">C</span>
           </div>
-          <h2 className="mt-6 text-3xl font-bold text-gray-900">
+          <h2 className="mt-6 text-3xl font-bold text-gray-100">
             {isRegister ? "Create your account" : "Welcome to CashMate"}
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-sm text-gray-300">
             {isRegister
               ? "Start tracking your finances today"
               : "Sign in to your account"}
           </p>
         </div>
 
-        <div className="bg-white rounded-lg shadow-xl p-8">
+        <div className="bg-gray-800 rounded-lg shadow-xl p-8 border border-gray-700">
           <form className="space-y-6" onSubmit={handleSubmit}>
             {error && (
-              <div className="bg-danger-50 border border-danger-200 rounded-md p-3">
-                <p className="text-sm text-danger-800">{error}</p>
+              <div className="bg-danger-900 border border-danger-700 rounded-md p-3">
+                <p className="text-sm text-danger-200">{error}</p>
               </div>
             )}
 
@@ -107,7 +100,7 @@ const LoginPage = () => {
                   name="name"
                   type="text"
                   required={isRegister}
-                  className="form-input" // Applying consistent style
+                  className="form-input"
                   placeholder="Enter your full name"
                   value={formData.name || ""}
                   onChange={handleChange}
@@ -125,7 +118,7 @@ const LoginPage = () => {
                 name="email"
                 type="email"
                 required
-                className="form-input" // Applying consistent style
+                className="form-input"
                 placeholder="Enter your email"
                 value={formData.email}
                 onChange={handleChange}
@@ -143,7 +136,7 @@ const LoginPage = () => {
                   name="password"
                   type={showPassword ? "text" : "password"}
                   required
-                  className="form-input pr-10" // Applying consistent style
+                  className="form-input pr-10"
                   placeholder="Enter your password"
                   value={formData.password}
                   onChange={handleChange}
@@ -151,13 +144,13 @@ const LoginPage = () => {
                 />
                 <button
                   type="button"
-                  className="absolute inset-y-0 right-0 pr-3 flex items-center"
+                  className="absolute inset-y-0 right-0 pr-3 flex items-center text-gray-500 hover:text-gray-400"
                   onClick={() => setShowPassword(!showPassword)}
                   disabled={loading}
                 >
                   {showPassword ? (
                     <svg
-                      className="h-5 w-5 text-gray-400"
+                      className="h-5 w-5"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -177,7 +170,7 @@ const LoginPage = () => {
                     </svg>
                   ) : (
                     <svg
-                      className="h-5 w-5 text-gray-400"
+                      className="h-5 w-5"
                       fill="none"
                       viewBox="0 0 24 24"
                       stroke="currentColor"
@@ -214,15 +207,12 @@ const LoginPage = () => {
             </div>
 
             <div className="text-center">
-              <button
-                type="button"
-                onClick={toggleMode}
-                className="text-sm text-primary-600 hover:text-primary-500"
+              <Link
+                to="/login?mode=register"
+                className="text-sm text-primary-500 hover:text-primary-400"
               >
-                {isRegister
-                  ? "Already have an account? Sign in"
-                  : "Don't have an account? Create one"}
-              </button>
+                Don't have an account? Create one
+              </Link>
             </div>
           </form>
         </div>

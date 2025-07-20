@@ -13,6 +13,7 @@ const Header = () => {
     { name: "Dashboard", href: "/dashboard", icon: "📊" },
     { name: "Transactions", href: "/transactions", icon: "💰" },
     { name: "Upload", href: "/upload", icon: "📤" },
+    { name: "Reports", href: "/transactions", icon: "📈" }, // Explicit Reports link
     { name: "Settings", href: "/settings", icon: "⚙️" },
   ];
 
@@ -24,16 +25,21 @@ const Header = () => {
   const isActive = (path) => location.pathname === path;
 
   return (
-    <header className="bg-white shadow-sm border-b border-gray-200">
+    <header className="bg-primary-900 shadow-lg border-b border-gray-800">
+      {" "}
+      {/* Darker header */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
         <div className="flex justify-between items-center h-16">
           {/* Logo and Brand */}
           <div className="flex items-center">
             <Link to="/dashboard" className="flex items-center space-x-2">
-              <div className="w-8 h-8 bg-primary-600 rounded-lg flex items-center justify-center">
+              <div className="w-8 h-8 bg-primary-500 rounded-lg flex items-center justify-center">
+                {" "}
+                {/* Vibrant primary accent */}
                 <span className="text-white font-bold text-lg">C</span>
               </div>
-              <span className="text-xl font-bold text-gray-900">CashMate</span>
+              <span className="text-gray-100 text-xl font-bold">CashMate</span>{" "}
+              {/* Light text on dark header */}
             </Link>
           </div>
 
@@ -45,8 +51,8 @@ const Header = () => {
                 to={item.href}
                 className={`flex items-center space-x-1 px-3 py-2 rounded-md text-sm font-medium transition-colors ${
                   isActive(item.href)
-                    ? "bg-primary-50 text-primary-700"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "bg-primary-700 text-primary-50" // Brighter active state
+                    : "text-gray-300 hover:text-white hover:bg-primary-800" // Lighter text on hover
                 }`}
               >
                 <span>{item.icon}</span>
@@ -60,16 +66,16 @@ const Header = () => {
             <div className="relative">
               <button
                 onClick={() => setIsUserMenuOpen(!isUserMenuOpen)}
-                className="flex items-center space-x-2 p-2 rounded-md text-sm text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                className="flex items-center space-x-2 p-2 rounded-md text-sm text-gray-300 hover:text-white hover:bg-primary-800"
               >
-                <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-primary-700 font-medium">
+                <div className="w-8 h-8 bg-primary-700 rounded-full flex items-center justify-center">
+                  <span className="text-primary-50 font-medium">
                     {user?.name?.charAt(0)?.toUpperCase() || "U"}
                   </span>
                 </div>
                 <span className="hidden lg:block">{user?.name || "User"}</span>
                 <svg
-                  className={`w-4 h-4 transition-transform ${
+                  className={`w-4 h-4 text-gray-300 transition-transform ${
                     isUserMenuOpen ? "rotate-180" : ""
                   }`}
                   fill="none"
@@ -87,23 +93,25 @@ const Header = () => {
 
               {/* User Dropdown Menu */}
               {isUserMenuOpen && (
-                <div className="absolute right-0 mt-2 w-48 bg-white rounded-md shadow-lg py-1 z-50 border border-gray-200">
-                  <div className="px-4 py-2 border-b border-gray-100">
-                    <p className="text-sm font-medium text-gray-900">
+                <div className="absolute right-0 mt-2 w-48 bg-gray-800 rounded-md shadow-lg py-1 z-50 border border-gray-700">
+                  {" "}
+                  {/* Darker dropdown */}
+                  <div className="px-4 py-2 border-b border-gray-700">
+                    <p className="text-sm font-medium text-gray-100">
                       {user?.name}
                     </p>
-                    <p className="text-xs text-gray-500">{user?.email}</p>
+                    <p className="text-xs text-gray-400">{user?.email}</p>
                   </div>
                   <Link
                     to="/settings"
-                    className="block px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="block px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                     onClick={() => setIsUserMenuOpen(false)}
                   >
                     Profile Settings
                   </Link>
                   <button
                     onClick={handleLogout}
-                    className="block w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-50"
+                    className="block w-full text-left px-4 py-2 text-sm text-gray-300 hover:bg-gray-700 hover:text-white"
                   >
                     Sign Out
                   </button>
@@ -116,7 +124,7 @@ const Header = () => {
           <div className="md:hidden">
             <button
               onClick={() => setIsMenuOpen(!isMenuOpen)}
-              className="inline-flex items-center justify-center p-2 rounded-md text-gray-600 hover:text-gray-900 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
+              className="inline-flex items-center justify-center p-2 rounded-md text-gray-300 hover:text-white hover:bg-primary-800 focus:outline-none focus:ring-2 focus:ring-inset focus:ring-primary-500"
             >
               <svg
                 className="block h-6 w-6"
@@ -139,19 +147,20 @@ const Header = () => {
           </div>
         </div>
       </div>
-
       {/* Mobile Navigation Menu */}
       {isMenuOpen && (
         <div className="md:hidden">
-          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-white border-t border-gray-200">
+          <div className="px-2 pt-2 pb-3 space-y-1 sm:px-3 bg-primary-800 border-t border-gray-800">
+            {" "}
+            {/* Darker mobile menu */}
             {navigation.map((item) => (
               <Link
                 key={item.name}
                 to={item.href}
                 className={`flex items-center space-x-2 px-3 py-2 rounded-md text-base font-medium ${
                   isActive(item.href)
-                    ? "bg-primary-50 text-primary-700"
-                    : "text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                    ? "bg-primary-700 text-primary-50" // Brighter active state
+                    : "text-gray-300 hover:text-white hover:bg-primary-700" // Lighter text on hover
                 }`}
                 onClick={() => setIsMenuOpen(false)}
               >
@@ -159,25 +168,24 @@ const Header = () => {
                 <span>{item.name}</span>
               </Link>
             ))}
-
             {/* Mobile User Section */}
-            <div className="border-t border-gray-200 pt-4">
+            <div className="border-t border-gray-800 pt-4">
               <div className="flex items-center px-3 py-2">
-                <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center mr-3">
-                  <span className="text-primary-700 font-medium">
+                <div className="w-8 h-8 bg-primary-700 rounded-full flex items-center justify-center mr-3">
+                  <span className="text-primary-50 font-medium">
                     {user?.name?.charAt(0)?.toUpperCase() || "U"}
                   </span>
                 </div>
                 <div>
-                  <div className="text-base font-medium text-gray-900">
+                  <div className="text-base font-medium text-gray-100">
                     {user?.name}
                   </div>
-                  <div className="text-sm text-gray-500">{user?.email}</div>
+                  <div className="text-sm text-gray-400">{user?.email}</div>
                 </div>
               </div>
               <button
                 onClick={handleLogout}
-                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-600 hover:text-gray-900 hover:bg-gray-50"
+                className="block w-full text-left px-3 py-2 text-base font-medium text-gray-300 hover:text-white hover:bg-primary-700"
               >
                 Sign Out
               </button>

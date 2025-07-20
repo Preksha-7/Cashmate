@@ -5,11 +5,12 @@
 
 @layer base {
   * {
-    @apply border-gray-300;
+    @apply border-gray-700; /* Darker border for dark theme */
   }
 
   body {
-    @apply bg-gray-50 text-gray-900 font-sans antialiased;
+    /* Using the new primary-900 for a dark, professional background */
+    @apply bg-primary-900 text-gray-100 font-sans antialiased;
     font-family: "Inter", system-ui, -apple-system, BlinkMacSystemFont,
       "Segoe UI", Roboto, sans-serif;
   }
@@ -17,6 +18,7 @@
   input,
   textarea,
   select {
+    /* Adjusting focus ring to match new primary color */
     @apply focus:outline-none focus:ring-2 focus:ring-primary-500 focus:border-transparent;
   }
 }
@@ -27,58 +29,66 @@
   }
 
   .btn-primary {
-    @apply bg-primary-600 text-white hover:bg-primary-700 focus:ring-primary-500;
+    /* Using new primary-500 for buttons */
+    @apply bg-primary-500 text-white hover:bg-primary-600 focus:ring-primary-500;
   }
 
   .btn-secondary {
-    @apply bg-gray-200 text-gray-900 hover:bg-gray-300 focus:ring-gray-500;
+    /* Adjusting secondary button for dark theme */
+    @apply bg-gray-700 text-gray-100 hover:bg-gray-600 focus:ring-gray-500;
   }
 
   .btn-success {
-    @apply bg-success-600 text-white hover:bg-success-700 focus:ring-success-500;
+    /* Using new success-500 for buttons */
+    @apply bg-success-500 text-white hover:bg-success-600 focus:ring-success-500;
   }
 
   .btn-danger {
-    @apply bg-danger-600 text-white hover:bg-danger-700 focus:ring-danger-500;
+    /* Using new danger-500 for buttons */
+    @apply bg-danger-500 text-white hover:bg-danger-600 focus:ring-danger-500;
   }
 
   .card {
-    @apply bg-white rounded-lg shadow-sm border border-gray-200;
+    /* Cards maintain a light background for content, but adjust border for dark theme */
+    @apply bg-white rounded-lg shadow-sm border border-gray-800;
   }
 
   .form-input {
-    @apply block w-full px-3 py-2 border border-gray-300 rounded-md shadow-sm placeholder-gray-400 focus:outline-none focus:ring-primary-500 focus:border-primary-500;
+    /* Adjusting form input for dark theme */
+    @apply block w-full px-3 py-2 border border-gray-700 rounded-md shadow-sm placeholder-gray-500 focus:outline-none focus:ring-primary-500 focus:border-primary-500 bg-gray-800 text-gray-100;
   }
 
   .form-select {
-    @apply block w-full px-3 py-2 border border-gray-300 bg-white rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500;
+    /* Adjusting form select for dark theme */
+    @apply block w-full px-3 py-2 border border-gray-700 bg-gray-800 rounded-md shadow-sm focus:outline-none focus:ring-primary-500 focus:border-primary-500 text-gray-100;
   }
 
   .form-label {
-    @apply block text-sm font-medium text-gray-700 mb-1;
+    /* Adjusting form label text color for dark theme */
+    @apply block text-sm font-medium text-gray-300 mb-1;
   }
 }
 
-/* Custom scrollbar */
+/* Custom scrollbar for dark theme */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 
 ::-webkit-scrollbar-track {
-  background: #f1f1f1;
+  background: #1a1a1a; /* Darker track */
 }
 
 ::-webkit-scrollbar-thumb {
-  background: #c1c1c1;
+  background: #666666; /* Darker thumb */
   border-radius: 3px;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background: #a8a8a8;
+  background: #808080; /* Darker thumb on hover */
 }
 
-/* Loading animation */
+/* Loading animation (colors remain primary) */
 @keyframes spin {
   to {
     transform: rotate(360deg);
@@ -105,13 +115,13 @@
   animation: fadeIn 0.3s ease-out;
 }
 
-/* React DatePicker custom styles */
+/* React DatePicker custom styles - ensuring it looks good on dark theme */
 .react-datepicker-wrapper {
   width: 100%;
 }
 
 .react-datepicker__input-container input {
-  @apply form-input;
+  @apply form-input; /* Use the adjusted form-input styles */
 }
 
 /* Chart responsiveness */

@@ -1,6 +1,6 @@
 // frontend/src/pages/DashboardPage.jsx
 
-import React, { useMemo } from "react"; // Import useMemo
+import React, { useMemo } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/common/Header";
 import Loading from "../components/common/Loading";
@@ -9,11 +9,8 @@ import Charts from "../components/dashboard/Charts";
 import SummaryCards from "../components/dashboard/SummaryCards";
 
 const DashboardPage = () => {
-  // Memoize the filters object to prevent re-creation on every render
-  // The empty dependency array [] means this object will only be created once.
   const memoizedFilters = useMemo(() => ({ limit: 5 }), []);
 
-  // Pass the memoized filters to the hook
   const { summary, transactions, monthlyData, categoryData, loading } =
     useTransactions(memoizedFilters);
 
@@ -34,7 +31,7 @@ const DashboardPage = () => {
 
   if (loading) {
     return (
-      <div className="min-h-screen bg-gray-50">
+      <div className="min-h-screen bg-primary-900">
         <Header />
         <Loading fullScreen text="Loading dashboard..." />
       </div>
@@ -42,19 +39,19 @@ const DashboardPage = () => {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="min-h-screen bg-primary-900">
       <Header />
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
         {/* Welcome Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-900">Dashboard</h1>
-          <p className="mt-1 text-sm text-gray-600">
+          <h1 className="text-2xl font-bold text-gray-100">Dashboard</h1>
+          <p className="mt-1 text-sm text-gray-300">
             Welcome back! Here's your financial overview.
           </p>
         </div>
 
-        {/* Summary Cards - Now passes summary as a prop */}
+        {/* Summary Cards - These components internally use their own bg colors */}
         <SummaryCards summary={summary} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -66,7 +63,7 @@ const DashboardPage = () => {
               </h3>
               <Link
                 to="/transactions"
-                className="text-sm text-primary-600 hover:text-primary-500"
+                className="text-sm text-primary-500 hover:text-primary-400"
               >
                 View All
               </Link>
@@ -92,7 +89,7 @@ const DashboardPage = () => {
               </h3>
               <Link
                 to="/transactions"
-                className="text-sm text-primary-600 hover:text-primary-500"
+                className="text-sm text-primary-500 hover:text-primary-400"
               >
                 View All
               </Link>
@@ -163,8 +160,8 @@ const DashboardPage = () => {
                         <span
                           className={`font-medium ${
                             transaction.type === "income"
-                              ? "text-success-600"
-                              : "text-danger-600"
+                              ? "text-success-500"
+                              : "text-danger-500"
                           }`}
                         >
                           {transaction.type === "income" ? "+" : "-"}
@@ -191,10 +188,10 @@ const DashboardPage = () => {
                   d="M9 5H7a2 2 0 00-2 2v10a2 2 0 002 2h8a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
                 />
               </svg>
-              <h3 className="mt-2 text-sm font-medium text-gray-900">
+              <h3 className="mt-2 text-sm font-medium text-gray-100">
                 No transactions yet
               </h3>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-300">
                 Get started by adding your first transaction.
               </p>
               <div className="mt-6">
@@ -204,85 +201,6 @@ const DashboardPage = () => {
               </div>
             </div>
           )}
-        </div>
-
-        {/* Quick Actions */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-          <Link
-            to="/transactions"
-            className="card p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-primary-100 rounded-full flex items-center justify-center">
-                  <span className="text-primary-600">💰</span>
-                </div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">
-                  Add Transaction
-                </p>
-                <p className="text-xs text-gray-500">
-                  Record income or expense
-                </p>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            to="/upload"
-            className="card p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-success-100 rounded-full flex items-center justify-center">
-                  <span className="text-success-600">📤</span>
-                </div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">
-                  Upload Receipt
-                </p>
-                <p className="text-xs text-gray-500">Scan and extract data</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            to="/transactions"
-            className="card p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-warning-100 rounded-full flex items-center justify-center">
-                  <span className="text-warning-600">📊</span>
-                </div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">
-                  View Reports
-                </p>
-                <p className="text-xs text-gray-500">Analyze spending</p>
-              </div>
-            </div>
-          </Link>
-
-          <Link
-            to="/settings"
-            className="card p-4 hover:shadow-md transition-shadow"
-          >
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-gray-100 rounded-full flex items-center justify-center">
-                  <span className="text-gray-600">⚙️</span>
-                </div>
-              </div>
-              <div className="ml-3">
-                <p className="text-sm font-medium text-gray-900">Settings</p>
-                <p className="text-xs text-gray-500">Manage preferences</p>
-              </div>
-            </div>
-          </Link>
         </div>
       </main>
     </div>
