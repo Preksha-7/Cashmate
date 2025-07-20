@@ -45,7 +45,9 @@ export class StartupManager {
     for (const dir of gitKeepDirs) {
       const gitKeepPath = path.join(dir, ".gitkeep");
       try {
+        // Check if .gitkeep already exists
         await fs.access(gitKeepPath);
+        // File exists, skip creating it
       } catch {
         try {
           await fs.writeFile(
@@ -132,9 +134,19 @@ export class StartupManager {
     }
   }
 
-  // Create upload configuration file
+  // Create upload configuration file - ONLY if it doesn't exist
   async createUploadConfig() {
-    const configPath = path.join(__dirname, "../config/upload.json");
+    const configDir = path.join(__dirname, "../config");
+    const configPath = path.join(configDir, "upload.json");
+
+    try {
+      // Check if config file already exists
+      await fs.access(configPath);
+      console.log("📄 Upload configuration already exists");
+      return; // File exists, skip creating it
+    } catch {
+      // File doesn't exist, create it
+    }
 
     const config = {
       maxFileSize: parseInt(process.env.MAX_FILE_SIZE || "10485760"),
@@ -156,6 +168,8 @@ export class StartupManager {
     };
 
     try {
+      // Ensure config directory exists
+      await fs.mkdir(configDir, { recursive: true });
       await fs.writeFile(configPath, JSON.stringify(config, null, 2));
       console.log("📄 Upload configuration created");
     } catch (error) {
