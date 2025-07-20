@@ -1,18 +1,17 @@
 // File: frontend/src/pages/DashboardPage.jsx
 
-import React from "react"; // No need for useState, useEffect anymore
+import React from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/common/Header";
 import Loading from "../components/common/Loading";
-import { useTransactions } from "../hooks/useTransaction"; // Use the enhanced hook
-import Charts from "../components/dashboard/Charts"; // Import Charts component
+import { useTransactions } from "../hooks/useTransaction";
+import Charts from "../components/dashboard/Charts";
+import SummaryCards from "../components/dashboard/SummaryCards"; // Import SummaryCards
 
 const DashboardPage = () => {
-  // Destructure all necessary data and loading state from the hook
   const { summary, transactions, monthlyData, categoryData, loading } =
-    useTransactions({ limit: 5 }); // Limit transactions to 5 for recent list
+    useTransactions({ limit: 5 });
 
-  // Helper functions (kept as they are useful)
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat("en-IN", {
       style: "currency",
@@ -50,126 +49,9 @@ const DashboardPage = () => {
           </p>
         </div>
 
-        {/* Summary Cards - Now receives summary as a prop */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {/*
-            NOTE: Your SummaryCards.jsx component below also has internal API calls.
-            To fully optimize, you should pass the 'summary' object as a prop to it
-            and remove its internal fetching. For now, I'm keeping the DashboardPage
-            logic with direct display, but ideally SummaryCards would be a pure
-            presentational component.
-            However, I will modify the SummaryCards.jsx to receive props below this.
-          */}
-          <div className="card p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-success-100 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-success-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M7 11l5-5m0 0l5 5m-5-5v12"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Income
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {formatCurrency(summary.totalIncome)}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div className="w-8 h-8 bg-danger-100 rounded-full flex items-center justify-center">
-                  <svg
-                    className="w-5 h-5 text-danger-600"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M17 13l-5 5m0 0l-5-5m5 5V6"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Total Expenses
-                  </dt>
-                  <dd className="text-lg font-medium text-gray-900">
-                    {formatCurrency(summary.totalExpenses)}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-
-          <div className="card p-6">
-            <div className="flex items-center">
-              <div className="flex-shrink-0">
-                <div
-                  className={`w-8 h-8 rounded-full flex items-center justify-center ${
-                    summary.balance >= 0 ? "bg-primary-100" : "bg-warning-100"
-                  }`}
-                >
-                  <svg
-                    className={`w-5 h-5 ${
-                      summary.balance >= 0
-                        ? "text-primary-600"
-                        : "text-warning-600"
-                    }`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      strokeWidth="2"
-                      d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1"
-                    />
-                  </svg>
-                </div>
-              </div>
-              <div className="ml-5 w-0 flex-1">
-                <dl>
-                  <dt className="text-sm font-medium text-gray-500 truncate">
-                    Net Balance
-                  </dt>
-                  <dd
-                    className={`text-lg font-medium ${
-                      summary.balance >= 0
-                        ? "text-gray-900"
-                        : "text-warning-600"
-                    }`}
-                  >
-                    {formatCurrency(summary.balance)}
-                  </dd>
-                </dl>
-              </div>
-            </div>
-          </div>
-        </div>
+        {/* Summary Cards - Now passes summary as a prop */}
+        {/* Replaced direct HTML with SummaryCards component passing the summary prop */}
+        <SummaryCards summary={summary} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
           {/* Monthly Trend Chart */}
@@ -185,12 +67,11 @@ const DashboardPage = () => {
                 View All
               </Link>
             </div>
-            {loading ? ( // Use the overall loading state
+            {loading ? (
               <div className="h-64 flex items-center justify-center">
                 <Loading size="md" text="Loading chart..." />
               </div>
             ) : monthlyData.length > 0 ? (
-              // Pass monthlyData to Charts component for rendering if it supports it
               <Charts data={monthlyData} type="monthly" />
             ) : (
               <div className="h-64 flex items-center justify-center">
@@ -212,12 +93,11 @@ const DashboardPage = () => {
                 View All
               </Link>
             </div>
-            {loading ? ( // Use the overall loading state
+            {loading ? (
               <div className="h-64 flex items-center justify-center">
                 <Loading size="md" text="Loading categories..." />
               </div>
             ) : categoryData.length > 0 ? (
-              // Pass categoryData to Charts component
               <Charts data={categoryData} type="category" />
             ) : (
               <div className="h-64 flex items-center justify-center">

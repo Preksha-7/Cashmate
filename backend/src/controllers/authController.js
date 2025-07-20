@@ -10,7 +10,7 @@ export class AuthController {
       res.status(201).json({
         success: true,
         message: "User registered successfully",
-        data: result,
+        data: result, // result now contains { user, token, refreshToken }
       });
     } catch (error) {
       console.error("Registration error:", error);
@@ -42,7 +42,7 @@ export class AuthController {
       res.json({
         success: true,
         message: "Login successful",
-        data: result,
+        data: result, // result now contains { user, token, refreshToken }
       });
     } catch (error) {
       console.error("Login error:", error);
@@ -75,7 +75,7 @@ export class AuthController {
       res.json({
         success: true,
         message: "Token refreshed successfully",
-        data: result,
+        data: result, // result contains { accessToken }
       });
     } catch (error) {
       console.error("Token refresh error:", error);
@@ -96,8 +96,8 @@ export class AuthController {
 
       res.json({
         success: true,
-        message: "Logged out successfully",
-        data: result,
+        message: result.message, // Use the message from the service
+        data: null, // No specific data needed for logout success
       });
     } catch (error) {
       console.error("Logout error:", error);
@@ -116,6 +116,7 @@ export class AuthController {
   // Get current user profile
   static async getProfile(req, res) {
     try {
+      // req.user is already populated by authenticateToken middleware
       res.json({
         success: true,
         message: "Profile retrieved successfully",
@@ -182,6 +183,14 @@ export class AuthController {
 
       // Verify current password
       const user = await User.findById(req.user.id);
+      if (!user) {
+        return res.status(404).json({
+          success: false,
+          error: "User not found",
+          message: "Authenticated user not found in the database.",
+        });
+      }
+
       const isCurrentPasswordValid = await user.verifyPassword(currentPassword);
 
       if (!isCurrentPasswordValid) {

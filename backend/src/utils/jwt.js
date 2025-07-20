@@ -25,7 +25,8 @@ export const verifyAccessToken = (token) => {
   try {
     return jwt.verify(token, process.env.JWT_SECRET);
   } catch (error) {
-    throw new Error("Invalid access token");
+    // Re-throw the original error, so that specific JWT errors (like TokenExpiredError) can be caught
+    throw error;
   }
 };
 

@@ -10,9 +10,9 @@ export const useTransactions = (filters = {}) => {
     totalExpenses: 0,
     balance: 0,
   });
-  const [monthlyData, setMonthlyData] = useState([]); // NEW: State for monthly trend data
-  const [categoryData, setCategoryData] = useState([]); // NEW: State for category breakdown data
-  const [loading, setLoading] = useState(true); // Changed initial state to true to show loading on first load
+  const [monthlyData, setMonthlyData] = useState([]);
+  const [categoryData, setCategoryData] = useState([]);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [pagination, setPagination] = useState({
     page: 1,
@@ -33,13 +33,13 @@ export const useTransactions = (filters = {}) => {
           ...newFilters,
         });
 
-        setTransactions(response.transactions);
+        setTransactions(response.transactions); // Access response.transactions directly
         setPagination(response.pagination);
       } catch (err) {
         setError(err.message || "Failed to fetch transactions");
         console.error("Error fetching transactions:", err);
-        setTransactions([]); // Clear transactions on error
-        setPagination({ page: 1, limit: 10, total: 0, totalPages: 0 }); // Reset pagination on error
+        setTransactions([]);
+        setPagination({ page: 1, limit: 10, total: 0, totalPages: 0 });
       } finally {
         setLoading(false);
       }
@@ -51,10 +51,10 @@ export const useTransactions = (filters = {}) => {
   const fetchSummary = useCallback(async (summaryFilters = {}) => {
     try {
       const response = await transactionService.getSummary(summaryFilters);
-      setSummary(response);
+      setSummary(response.summary); // Access response.summary directly
     } catch (err) {
       console.error("Error fetching summary:", err);
-      setSummary({ totalIncome: 0, totalExpenses: 0, balance: 0 }); // Reset summary on error
+      setSummary({ totalIncome: 0, totalExpenses: 0, balance: 0 });
     }
   }, []);
 
@@ -65,12 +65,12 @@ export const useTransactions = (filters = {}) => {
         transactionService.getMonthlySummary(),
         transactionService.getByCategory(),
       ]);
-      setMonthlyData(monthlyResponse.data || []);
-      setCategoryData(categoryResponse.data || []);
+      setMonthlyData(monthlyResponse.monthlyData || []); // Access monthlyData directly
+      setCategoryData(categoryResponse.categories || []); // Access categories directly
     } catch (error) {
       console.error("Error loading chart data:", error);
-      setMonthlyData([]); // Clear data on error
-      setCategoryData([]); // Clear data on error
+      setMonthlyData([]);
+      setCategoryData([]);
     }
   }, []);
 
@@ -78,17 +78,18 @@ export const useTransactions = (filters = {}) => {
   const addTransaction = async (transactionData) => {
     try {
       setLoading(true);
-      const newTransaction = await transactionService.createTransaction(
+      const response = await transactionService.createTransaction(
+        // Get full response
         transactionData
       );
 
       // Optimistically update the list
-      setTransactions((prev) => [newTransaction, ...prev]);
+      setTransactions((prev) => [response.transaction, ...prev]); // Access response.transaction
 
       // Refresh summary and chart data
       await Promise.all([fetchSummary(filters), fetchChartData()]);
 
-      return { success: true, data: newTransaction };
+      return { success: true, data: response.transaction }; // Return response.transaction
     } catch (err) {
       setError(err.message || "Failed to add transaction");
       return { success: false, error: err.message };
@@ -101,20 +102,21 @@ export const useTransactions = (filters = {}) => {
   const updateTransaction = async (id, transactionData) => {
     try {
       setLoading(true);
-      const updatedTransaction = await transactionService.updateTransaction(
+      const response = await transactionService.updateTransaction(
+        // Get full response
         id,
         transactionData
       );
 
       // Update the transaction in the list
-      setTransactions((prev) =>
-        prev.map((t) => (t.id === id ? updatedTransaction : t))
+      setTransactions(
+        (prev) => prev.map((t) => (t.id === id ? response.transaction : t)) // Access response.transaction
       );
 
       // Refresh summary and chart data
       await Promise.all([fetchSummary(filters), fetchChartData()]);
 
-      return { success: true, data: updatedTransaction };
+      return { success: true, data: response.transaction }; // Return response.transaction
     } catch (err) {
       setError(err.message || "Failed to update transaction");
       return { success: false, error: err.message };
@@ -155,22 +157,22 @@ export const useTransactions = (filters = {}) => {
   const refresh = () => {
     fetchTransactions();
     fetchSummary(filters);
-    fetchChartData(); // NEW: Refresh chart data on refresh
+    fetchChartData();
   };
 
   // Initial load for all data
   useEffect(() => {
     fetchTransactions();
     fetchSummary(filters);
-    fetchChartData(); // NEW: Fetch chart data on initial load
-  }, [fetchTransactions, fetchSummary, fetchChartData, filters]); // Added fetchChartData to dependency array
+    fetchChartData();
+  }, [fetchTransactions, fetchSummary, fetchChartData, filters]);
 
   return {
     // Data
     transactions,
     summary,
-    monthlyData, // NEW: Return monthly data
-    categoryData, // NEW: Return category data
+    monthlyData,
+    categoryData,
     pagination,
 
     // State

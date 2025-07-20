@@ -1,4 +1,5 @@
 import axios from "axios";
+import { authService } from "./auth"; // Import authService here to use refreshToken method
 
 // Base API configuration
 // Use the proxy when in development, full URL in production
@@ -16,6 +17,21 @@ const api = axios.create({
   },
 });
 
+// Flag to prevent multiple refresh token requests
+let isRefreshing = false;
+let failedQueue = [];
+
+const processQueue = (error, token = null) => {
+  failedQueue.forEach((prom) => {
+    if (error) {
+      prom.reject(error);
+    } else {
+      prom.resolve(token);
+    }
+  });
+  failedQueue = [];
+};
+
 // Request interceptor to add auth token
 api.interceptors.request.use(
   (config) => {
@@ -29,8 +45,13 @@ api.interceptors.request.use(
       method: config.method,
       url: config.url,
       baseURL: config.baseURL,
-      fullURL: `${config.baseURL}${config.url}`,
-      headers: config.headers,
+      // fullURL: `${config.baseURL}${config.url}`, // This can be misleading with proxy
+      headers: {
+        ...config.headers,
+        Authorization: config.headers.Authorization ? "Bearer [token]" : "None",
+      }, // Redact token
+      params: config.params,
+      data: config.data,
     });
 
     return config;
@@ -52,51 +73,90 @@ api.interceptors.response.use(
     return response;
   },
   async (error) => {
+    const originalRequest = error.config;
+    const statusCode = error.response?.status;
+    const errorData = error.response?.data;
+
     console.error("API Error:", {
-      status: error.response?.status,
+      status: statusCode,
       statusText: error.response?.statusText,
-      url: error.config?.url,
+      url: originalRequest?.url,
       message: error.message,
-      data: error.response?.data,
+      data: errorData,
+      isRetry: originalRequest._retry, // Log if it's a retry request
     });
 
-    const originalRequest = error.config;
-
     // Handle 429 errors (rate limit) - wait and retry
-    if (error.response?.status === 429) {
+    if (statusCode === 429) {
       console.warn("Rate limit hit, retrying after delay...");
       await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait 2 seconds
       return api(originalRequest);
     }
 
-    // Handle 401 errors (unauthorized)
-    if (error.response?.status === 401 && !originalRequest._retry) {
-      originalRequest._retry = true;
+    // Handle 401 errors (unauthorized) and specifically TokenExpiredError
+    if (
+      statusCode === 401 &&
+      errorData?.code === "TOKEN_EXPIRED" &&
+      !originalRequest._retry
+    ) {
+      originalRequest._retry = true; // Mark as retried
+
+      if (isRefreshing) {
+        // If token is already refreshing, queue the original request
+        return new Promise((resolve) => {
+          failedQueue.push((token) => {
+            originalRequest.headers.Authorization = `Bearer ${token}`;
+            resolve(api(originalRequest));
+          });
+        });
+      }
+
+      isRefreshing = true; // Set flag to indicate refresh is in progress
 
       try {
         const refreshToken = localStorage.getItem("refreshToken");
-        if (refreshToken) {
-          const response = await axios.post(`${API_BASE_URL}/auth/refresh`, {
-            refreshToken,
-          });
-
-          const { token } = response.data;
-          localStorage.setItem("token", token);
-
-          // Retry original request with new token
-          originalRequest.headers.Authorization = `Bearer ${token}`;
-          return api(originalRequest);
+        if (!refreshToken) {
+          console.error("No refresh token found. Redirecting to login.");
+          // No refresh token, redirect to login
+          localStorage.removeItem("token");
+          localStorage.removeItem("refreshToken");
+          window.location.href = "/login";
+          return Promise.reject(error);
         }
+
+        console.log("Attempting to refresh token...");
+        // Call authService.refreshToken
+        const refreshResponse = await authService.refreshToken(refreshToken);
+        const newAccessToken = refreshResponse.accessToken; // Access accessToken directly from refreshResponse
+
+        localStorage.setItem("token", newAccessToken);
+
+        // Retry original request with new token
+        originalRequest.headers.Authorization = `Bearer ${newAccessToken}`;
+
+        processQueue(null, newAccessToken); // Process queued requests
+        return api(originalRequest);
       } catch (refreshError) {
-        // Refresh failed, redirect to login
+        console.error("Refresh token failed:", refreshError);
+        processQueue(refreshError); // Reject all queued requests
+        // Clear tokens and redirect to login on refresh failure
         localStorage.removeItem("token");
         localStorage.removeItem("refreshToken");
         window.location.href = "/login";
         return Promise.reject(refreshError);
+      } finally {
+        isRefreshing = false; // Reset refresh flag
       }
+    } else if (statusCode === 401 && errorData?.code === "INVALID_TOKEN") {
+      console.error("Invalid token. Redirecting to login.");
+      // Invalid token (not expired), force logout
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
+      window.location.href = "/login";
+      return Promise.reject(error);
     }
 
-    // Handle other errors
+    // For any other errors or if 401 was a retry, just reject
     const errorMessage =
       error.response?.data?.message ||
       error.response?.data?.error ||

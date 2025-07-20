@@ -1,38 +1,7 @@
 // backend/src/controllers/transactionController.js
 import { Transaction } from "../models/Transaction.js";
 
-export const getTransactions = async (req, res) => {
-  try {
-    const userId = req.user.id;
-    const { page = 1, limit = 10, start, end } = req.query;
-
-    const offset = (page - 1) * limit;
-    let query = { user_id: userId };
-
-    if (start && end) {
-      query.date = {
-        $gte: new Date(start),
-        $lte: new Date(end),
-      };
-    }
-
-    const transactions = await Transaction.find(query)
-      .sort({ date: -1 })
-      .skip(offset)
-      .limit(parseInt(limit));
-
-    const total = await Transaction.countDocuments(query);
-
-    res.status(200).json({
-      page: parseInt(page),
-      limit: parseInt(limit),
-      total,
-      data: transactions,
-    });
-  } catch (error) {
-    res.status(500).json({ message: error.message });
-  }
-};
+// Removed the duplicate `getTransactions` function here as it conflicts with the class method.
 
 export class TransactionController {
   // Create new transaction
@@ -49,7 +18,7 @@ export class TransactionController {
       res.status(201).json({
         success: true,
         message: "Transaction created successfully",
-        data: { transaction },
+        transaction: transaction, // Changed from data: { transaction } to transaction: transaction
       });
     } catch (error) {
       console.error("Create transaction error:", error);
@@ -119,15 +88,13 @@ export class TransactionController {
       res.json({
         success: true,
         message: "Transactions retrieved successfully",
-        data: {
-          transactions,
-          pagination: {
-            currentPage: parseInt(page),
-            totalPages,
-            totalCount,
-            hasNext: page < totalPages,
-            hasPrev: page > 1,
-          },
+        transactions: transactions, // Changed from data: { transactions }
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages,
+          totalCount,
+          hasNext: page < totalPages,
+          hasPrev: page > 1,
         },
       });
     } catch (error) {
@@ -169,7 +136,7 @@ export class TransactionController {
       res.json({
         success: true,
         message: "Transaction retrieved successfully",
-        data: { transaction },
+        transaction: transaction, // Changed from data: { transaction }
       });
     } catch (error) {
       console.error("Get transaction by ID error:", error);
@@ -212,7 +179,7 @@ export class TransactionController {
       res.json({
         success: true,
         message: "Transaction updated successfully",
-        data: { transaction: updatedTransaction },
+        transaction: updatedTransaction, // Changed from data: { transaction }
       });
     } catch (error) {
       console.error("Update transaction error:", error);
@@ -292,7 +259,7 @@ export class TransactionController {
       res.json({
         success: true,
         message: "Financial summary retrieved successfully",
-        data: { summary },
+        summary: summary, // Changed from data: { summary }
       });
     } catch (error) {
       console.error("Get financial summary error:", error);
@@ -329,7 +296,7 @@ export class TransactionController {
       res.json({
         success: true,
         message: "Category data retrieved successfully",
-        data: { categories: categoryData },
+        categories: categoryData, // Changed from data: { categories }
       });
     } catch (error) {
       console.error("Get category data error:", error);
@@ -357,7 +324,7 @@ export class TransactionController {
       res.json({
         success: true,
         message: "Monthly summary retrieved successfully",
-        data: { monthlyData },
+        monthlyData: monthlyData, // Changed from data: { monthlyData }
       });
     } catch (error) {
       console.error("Get monthly summary error:", error);

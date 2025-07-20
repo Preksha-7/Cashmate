@@ -25,8 +25,7 @@ class PDFController {
     try {
       parsedData = await this.pdfParserService.parsePDF(
         pdfBuffer,
-        filename,
-        userId
+        filename // Pass filename to PDFParserService
       );
     } catch (error) {
       logger.error("Error parsing PDF:", {
@@ -44,6 +43,7 @@ class PDFController {
       throw new AppError("Failed to parse PDF content.", 500);
     }
 
+    // Pass parsedData.transactions directly as the service returns transformed transactions within it
     const { transactions: parsedTransactions, summary } =
       this.pdfParserService.transformToTransactions(parsedData, userId);
 
@@ -57,7 +57,7 @@ class PDFController {
         // that queries your MySQL database to check for existing transactions based on
         // relevant fields like date, amount, description, and userId.
         const existingTransaction = await Transaction.findDuplicate(
-          transactionData.userId,
+          transactionData.user_id, // Use user_id as per schema
           transactionData.date,
           transactionData.amount,
           transactionData.description

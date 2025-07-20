@@ -1,6 +1,6 @@
 // File: frontend/src/components/dashboard/Charts.jsx
 
-import React from "react"; // Removed useEffect, useState, API import
+import React from "react";
 import {
   PieChart,
   Pie,
@@ -51,24 +51,28 @@ const Charts = ({ data, type }) => {
           <PieChart>
             <Pie
               data={data}
-              dataKey="amount" // Assuming 'amount' is the value for categories
+              dataKey="totalAmount" // Assuming 'totalAmount' is the value for categories
               nameKey="category" // Assuming 'category' is the name
               cx="50%"
               cy="50%"
               outerRadius={80}
-              label={({ name, percent }) =>
-                `${name} (${(percent * 100).toFixed(0)}%)`
-              } // Added percentage to label
+              label={({ category, percent }) =>
+                `${category} (${(percent * 100).toFixed(0)}%)`
+              } // Use 'category' for label
             >
-              {data.map((_, index) => (
-                <Cell
-                  key={`cell-${index}`}
-                  fill={COLORS[index % COLORS.length]}
-                />
-              ))}
+              {data.map(
+                (
+                  entry,
+                  index // Changed to map 'entry'
+                ) => (
+                  <Cell
+                    key={`cell-${index}`}
+                    fill={COLORS[index % COLORS.length]}
+                  />
+                )
+              )}
             </Pie>
-            <Tooltip formatter={(value) => formatCurrency(value)} />{" "}
-            {/* Format tooltip values */}
+            <Tooltip formatter={(value) => formatCurrency(value)} />
             <Legend />
           </PieChart>
         </ResponsiveContainer>
@@ -76,7 +80,6 @@ const Charts = ({ data, type }) => {
     );
   } else if (type === "monthly") {
     // Bar Chart for monthly trends
-    // Assuming monthlyData has 'month', 'income', 'expenses'
     return (
       <div className="h-64">
         <ResponsiveContainer width="100%" height="100%">
@@ -84,8 +87,7 @@ const Charts = ({ data, type }) => {
             <XAxis
               dataKey="month"
               tickFormatter={(month) => month.substring(0, 3)}
-            />{" "}
-            {/* Show short month name */}
+            />
             <YAxis tickFormatter={(value) => formatCurrency(value)} />
             <Tooltip formatter={(value) => formatCurrency(value)} />
             <Legend />

@@ -1,3 +1,4 @@
+// frontend/src/context/AuthContext.jsx
 import React, { createContext, useContext, useState, useEffect } from "react";
 import { authService } from "../services/auth";
 
@@ -18,25 +19,30 @@ export const AuthProvider = ({ children }) => {
 
   // Initialize auth state on mount
   useEffect(() => {
-    initializeAuth();
-  }, []);
-
-  const initializeAuth = async () => {
-    try {
-      const token = localStorage.getItem("token");
-      if (token) {
-        const userData = await authService.getCurrentUser();
-        setUser(userData);
-        setIsAuthenticated(true);
+    const initializeAuth = async () => {
+      try {
+        const token = localStorage.getItem("token");
+        // Only try to fetch user if a token exists
+        if (token) {
+          // Verify the token immediately by trying to get the current user
+          const userData = await authService.getCurrentUser();
+          setUser(userData);
+          setIsAuthenticated(true);
+        }
+      } catch (error) {
+        console.error("Auth initialization failed:", error);
+        // Clear tokens if initialization fails (e.g., token expired or invalid)
+        localStorage.removeItem("token");
+        localStorage.removeItem("refreshToken");
+        setUser(null);
+        setIsAuthenticated(false);
+      } finally {
+        setLoading(false);
       }
-    } catch (error) {
-      console.error("Auth initialization failed:", error);
-      localStorage.removeItem("token");
-      localStorage.removeItem("refreshToken");
-    } finally {
-      setLoading(false);
-    }
-  };
+    };
+
+    initializeAuth();
+  }, []); // Empty dependency array means this runs once on mount
 
   const login = async (email, password) => {
     try {
@@ -44,13 +50,14 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.login(email, password);
 
       // Store tokens
-      localStorage.setItem("token", response.token);
-      if (response.refreshToken) {
-        localStorage.setItem("refreshToken", response.refreshToken);
+      localStorage.setItem("token", response.data.token); // Access response.data.token
+      if (response.data.refreshToken) {
+        // Access response.data.refreshToken
+        localStorage.setItem("refreshToken", response.data.refreshToken);
       }
 
       // Set user data
-      setUser(response.user);
+      setUser(response.data.user); // Access response.data.user
       setIsAuthenticated(true);
 
       return { success: true };
@@ -71,12 +78,13 @@ export const AuthProvider = ({ children }) => {
       const response = await authService.register(userData);
 
       // Auto login after registration
-      localStorage.setItem("token", response.token);
-      if (response.refreshToken) {
-        localStorage.setItem("refreshToken", response.refreshToken);
+      localStorage.setItem("token", response.data.token); // Access response.data.token
+      if (response.data.refreshToken) {
+        // Access response.data.refreshToken
+        localStorage.setItem("refreshToken", response.data.refreshToken);
       }
 
-      setUser(response.user);
+      setUser(response.data.user); // Access response.data.user
       setIsAuthenticated(true);
 
       return { success: true };
@@ -93,7 +101,11 @@ export const AuthProvider = ({ children }) => {
 
   const logout = async () => {
     try {
-      await authService.logout();
+      // Ensure refresh token is sent with logout request
+      const refreshToken = localStorage.getItem("refreshToken");
+      if (refreshToken) {
+        await authService.logout(refreshToken); // Pass refreshToken to logout service
+      }
     } catch (error) {
       console.error("Logout error:", error);
     } finally {

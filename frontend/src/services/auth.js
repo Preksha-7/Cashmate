@@ -25,22 +25,27 @@ export const authService = {
   },
 
   // Logout user
-  logout: async () => {
+  logout: async (refreshToken) => {
+    // Added refreshToken parameter
     try {
-      const refreshToken = localStorage.getItem("refreshToken");
       if (refreshToken) {
         await apiService.post("/auth/logout", { refreshToken });
+      } else {
+        console.warn("No refresh token found for logout.");
       }
     } catch (error) {
       console.error("Logout error:", error);
+      // Even if API call fails, clear tokens locally
+      localStorage.removeItem("token");
+      localStorage.removeItem("refreshToken");
     }
   },
 
   // Get current user data
   getCurrentUser: async () => {
     try {
-      const response = await apiService.get("/auth/me");
-      return response.user;
+      const response = await apiService.get("/auth/profile"); // Corrected endpoint from /auth/me to /auth/profile
+      return response.data.user; // Access user from response.data.user
     } catch (error) {
       throw error;
     }
@@ -62,7 +67,7 @@ export const authService = {
   updateProfile: async (userData) => {
     try {
       const response = await apiService.put("/auth/profile", userData);
-      return response.user;
+      return response.data.user;
     } catch (error) {
       throw error;
     }
@@ -81,7 +86,7 @@ export const authService = {
     }
   },
 
-  // Forgot password
+  // Forgot password (Assuming these endpoints exist on backend based on previous context)
   forgotPassword: async (email) => {
     try {
       const response = await apiService.post("/auth/forgot-password", {
@@ -93,7 +98,7 @@ export const authService = {
     }
   },
 
-  // Reset password
+  // Reset password (Assuming these endpoints exist on backend based on previous context)
   resetPassword: async (token, newPassword) => {
     try {
       const response = await apiService.post("/auth/reset-password", {
@@ -106,7 +111,7 @@ export const authService = {
     }
   },
 
-  // Verify email
+  // Verify email (Assuming these endpoints exist on backend based on previous context)
   verifyEmail: async (token) => {
     try {
       const response = await apiService.post("/auth/verify-email", {
@@ -118,7 +123,7 @@ export const authService = {
     }
   },
 
-  // Resend verification email
+  // Resend verification email (Assuming these endpoints exist on backend based on previous context)
   resendVerification: async (email) => {
     try {
       const response = await apiService.post("/auth/resend-verification", {

@@ -1,7 +1,7 @@
 // src/services/pdfParserService.js
-const axios = require("axios");
-const FormData = require("form-data");
-const logger = require("../utils/logger");
+import axios from "axios"; // Use import instead of require
+import FormData from "form-data"; // Use import instead of require
+import { logger } from "../utils/logger.js"; // Use import instead of require
 
 class PDFParserService {
   constructor() {
@@ -20,7 +20,7 @@ class PDFParserService {
     try {
       const formData = new FormData();
       formData.append("file", pdfBuffer, {
-        filename: filename,
+        filename: filename, // Correctly pass filename here
         contentType: "application/pdf",
       });
 
@@ -79,18 +79,20 @@ class PDFParserService {
    * Transform parsed data to match database schema
    * @param {Object} parsedData - Data from PDF parser
    * @param {string} userId - User ID
-   * @returns {Object} Transformed data
+   * @returns {Object} Transformed data with transactions and summary
    */
   transformToTransactions(parsedData, userId) {
     const transactions = parsedData.transactions.map((transaction) => ({
-      userId,
-      date: new Date(transaction.date),
+      user_id: userId, // Changed to user_id to match MySQL schema
+      date: transaction.date, // Date should already be 'YYYY-MM-DD' from Python service
       description: transaction.description,
-      amount: transaction.amount,
-      type: transaction.transaction_type,
-      category: this.categorizeTransaction(transaction.description),
-      balance: transaction.balance,
-      source: "bank_statement",
+      amount: parseFloat(transaction.amount),
+      type: transaction.transaction_type === "debit" ? "expense" : "income", // Map 'debit'/'credit' to 'expense'/'income'
+      category:
+        transaction.category ||
+        this.categorizeTransaction(transaction.description), // Use category from parser if available, else categorize
+      // balance: transaction.balance, // Not directly stored in Transaction model
+      // source: "bank_statement", // Not directly stored in Transaction model
     }));
 
     return {
@@ -125,9 +127,21 @@ class PDFParserService {
       entertainment: ["movie", "cinema", "netflix", "spotify", "game"],
       healthcare: ["hospital", "doctor", "pharmacy", "medical", "health"],
       salary: ["salary", "wage", "payroll", "income"],
-      transfer: ["transfer", "sent", "received", "deposit"],
+      transfer: ["transfer", "sent", "received", "deposit", "upi"],
       withdrawal: ["atm", "cash", "withdrawal"],
       fees: ["fee", "charge", "penalty", "interest"],
+      groceries: [
+        "supermarket",
+        "kirana",
+        "grocery",
+        "d-mart",
+        "reliance fresh",
+      ],
+      housing: ["rent", "mortgage", "housing", "maintenance"],
+      education: ["school", "college", "fees", "books", "tuition"],
+      investments: ["investment", "stocks", "mutual fund"],
+      personal: ["salon", "spa", "gym"],
+      travel: ["flight", "hotel", "travel"],
     };
 
     for (const [category, keywords] of Object.entries(categories)) {
@@ -136,8 +150,8 @@ class PDFParserService {
       }
     }
 
-    return "other";
+    return "miscellaneous"; // Default category if none match
   }
 }
 
-module.exports = PDFParserService;
+export default new PDFParserService();

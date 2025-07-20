@@ -1,3 +1,4 @@
+// backend/src/models/User.js
 import { executeQuery } from "../config/database.js";
 import bcrypt from "bcrypt";
 
@@ -7,7 +8,7 @@ export class User {
     this.name = data.name;
     this.email = data.email;
     this.password = data.password;
-    this.created_at = data.created_at;
+    this.created_at = data.created_at; // Corrected from data.created.at
     this.updated_at = data.updated_at;
   }
 
@@ -41,14 +42,38 @@ export class User {
 
   // Update user
   static async update(id, userData) {
-    const { name, email } = userData;
+    const { name, email, password } = userData;
+    let updateFields = [];
+    let params = [];
+
+    if (name !== undefined) {
+      updateFields.push("name = ?");
+      params.push(name);
+    }
+    if (email !== undefined) {
+      updateFields.push("email = ?");
+      params.push(email);
+    }
+    if (password !== undefined) {
+      const hashedPassword = await bcrypt.hash(password, 10);
+      updateFields.push("password = ?");
+      params.push(hashedPassword);
+    }
+
+    if (updateFields.length === 0) {
+      return await User.findById(id); // Nothing to update
+    }
+
+    updateFields.push("updated_at = CURRENT_TIMESTAMP");
+    params.push(id);
+
     const query = `
       UPDATE users 
-      SET name = ?, email = ?, updated_at = CURRENT_TIMESTAMP
+      SET ${updateFields.join(", ")}
       WHERE id = ?
     `;
 
-    await executeQuery(query, [name, email, id]);
+    await executeQuery(query, params);
     return await User.findById(id);
   }
 
@@ -61,5 +86,11 @@ export class User {
   // Verify password
   async verifyPassword(password) {
     return await bcrypt.compare(password, this.password);
+  }
+
+  // Method to return a safe user object without sensitive data
+  toSafeObject() {
+    const { id, name, email, created_at, updated_at } = this;
+    return { id, name, email, created_at, updated_at };
   }
 }
