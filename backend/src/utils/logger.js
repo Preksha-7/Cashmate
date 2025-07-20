@@ -1,5 +1,3 @@
-// File: backend/src/utils/logger.js
-
 import winston from "winston";
 import path from "path";
 import { fileURLToPath } from "url"; // Required for __dirname equivalent in ES Modules

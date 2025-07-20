@@ -1,5 +1,3 @@
-// frontend/src/App.jsx
-
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -10,6 +8,8 @@ import {
 import { AuthProvider } from "./context/AuthContext";
 import { useAuth } from "./hooks/useAuth";
 import ErrorBoundary from "./components/common/ErrorBoundary";
+import Header from "./components/common/Header"; // Ensure Header is imported
+import Footer from "./components/common/Footer"; // Import the new Footer
 
 // Pages
 import LoginPage from "./pages/LoginPage";
@@ -112,8 +112,17 @@ const App = () => {
     <ErrorBoundary>
       <AuthProvider>
         <Router>
-          <div className="App">
-            <AppRouter />
+          <div className="App flex flex-col min-h-screen">
+            {" "}
+            {/* Added flex-col and min-h-screen for sticky footer */}
+            <Header />{" "}
+            {/* Header is already here, no change needed for consistency */}
+            <main className="flex-grow">
+              {" "}
+              {/* main tag with flex-grow to push footer down */}
+              <AppRouter />
+            </main>
+            <Footer /> {/* Include the Footer here */}
           </div>
         </Router>
       </AuthProvider>

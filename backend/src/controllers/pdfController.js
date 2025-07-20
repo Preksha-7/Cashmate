@@ -1,5 +1,3 @@
-// File: backend/src/controllers/pdfController.js
-
 import PDFParserService from "../services/pdfParserService.js";
 import { Transaction } from "../models/Transaction.js";
 import { logger } from "../utils/logger.js";

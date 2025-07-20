@@ -1,4 +1,3 @@
-// backend/src/routes/receipts.js
 import express from "express";
 import { ReceiptController } from "../controllers/receiptController.js";
 import { uploadSingle, uploadMultiple } from "../middleware/multer.js";

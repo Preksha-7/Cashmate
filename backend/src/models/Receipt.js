@@ -1,6 +1,5 @@
-// backend/src/models/Receipt.js
 import { executeQuery } from "../config/database.js";
-import { AppError } from "../middleware/errorHandler.js"; // Corrected: use 'from' instead of '='
+import { AppError } from "../middleware/errorHandler.js";
 
 export class Receipt {
   constructor(data) {

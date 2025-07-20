@@ -1,5 +1,3 @@
-// File: frontend/src/components/auth/Register.jsx
-
 import React, { useState } from "react";
 import { Link } from "react-router-dom"; // Keep Link for navigation to Login
 import { useAuth } from "../../context/AuthContext"; // Use AuthContext hook

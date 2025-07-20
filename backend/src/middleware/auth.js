@@ -1,5 +1,3 @@
-// backend/src/middleware/auth.js
-
 import { verifyAccessToken } from "../utils/jwt.js";
 import { User } from "../models/User.js";
 import { AppError } from "./errorHandler.js"; // Import AppError

@@ -10,9 +10,9 @@ const Header = () => {
   const navigate = useNavigate();
 
   const navigation = [
-    { name: "Dashboard", href: "/dashboard", icon: "投" },
-    { name: "Transactions", href: "/transactions", icon: "腸" },
-    { name: "Upload", href: "/upload", icon: "豆" },
+    { name: "Dashboard", href: "/dashboard", icon: "" },
+    { name: "Transactions", href: "/transactions", icon: "" },
+    { name: "Upload", href: "/upload", icon: "" },
   ];
 
   const handleLogout = async () => {

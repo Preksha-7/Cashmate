@@ -56,8 +56,8 @@ module.exports = {
           500: "#707070",
           600: "#505050",
           700: "#303030",
-          800: "#1A1A1A",
-          900: "#0A0A0A",
+          800: "#1A1A1A", // Darker gray for cards/sections
+          900: "#0A0A0A", // Almost black for very dark backgrounds
         },
       },
       fontFamily: {

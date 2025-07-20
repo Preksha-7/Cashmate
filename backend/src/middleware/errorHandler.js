@@ -1,4 +1,3 @@
-// backend/src/middleware/errorHandler.js
 import multer from "multer";
 
 export class AppError extends Error {

@@ -1,4 +1,3 @@
-// src/services/pdfParserService.js
 import axios from "axios";
 import FormData from "form-data";
 import { logger } from "../utils/logger.js";

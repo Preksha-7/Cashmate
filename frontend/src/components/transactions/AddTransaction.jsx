@@ -1,4 +1,3 @@
-// frontend/src/components/transactions/AddTransaction.jsx
 import React, { useState } from "react";
 import { transactionService } from "../../services/transactions";
 
@@ -110,14 +109,14 @@ const AddTransaction = ({ onAdd, onClose }) => {
   };
 
   return (
-    <div className="bg-white p-6 rounded-lg shadow-md">
+    <div className="bg-gray-800 p-6 rounded-lg shadow-md border border-gray-700">
       <div className="flex justify-between items-center mb-4">
-        <h3 className="text-lg font-semibold text-gray-900">Add Transaction</h3>
+        <h3 className="text-lg font-semibold text-gray-100">Add Transaction</h3>
         {onClose && (
           <button
             type="button"
             onClick={handleCancel}
-            className="text-gray-400 hover:text-gray-600"
+            className="text-gray-400 hover:text-gray-200"
           >
             ✕
           </button>
@@ -126,7 +125,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
 
       {/* The error message will only be displayed if the 'error' state is not empty */}
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-700 px-4 py-3 rounded mb-4">
+        <div className="bg-danger-900 border border-danger-700 text-danger-200 px-4 py-3 rounded mb-4">
           {error}
         </div>
       )}
@@ -136,7 +135,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
           <div>
             <label
               htmlFor="amount"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-300 mb-1"
             >
               Amount *
             </label>
@@ -147,7 +146,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
               step="0.01"
               min="0.01"
               placeholder="0.00"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="form-input"
               value={form.amount}
               onChange={handleChange}
               required
@@ -158,14 +157,14 @@ const AddTransaction = ({ onAdd, onClose }) => {
           <div>
             <label
               htmlFor="type"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-300 mb-1"
             >
               Type *
             </label>
             <select
               id="type"
               name="type"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="form-select"
               value={form.type}
               onChange={handleChange}
               required
@@ -179,7 +178,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
           <div>
             <label
               htmlFor="category"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-300 mb-1"
             >
               Category *
             </label>
@@ -188,7 +187,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
               name="category"
               type="text"
               placeholder="e.g., Food, Transportation, Salary"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="form-input"
               value={form.category}
               onChange={handleChange}
               required
@@ -199,7 +198,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
           <div>
             <label
               htmlFor="date"
-              className="block text-sm font-medium text-gray-700 mb-1"
+              className="block text-sm font-medium text-gray-300 mb-1"
             >
               Date *
             </label>
@@ -207,7 +206,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
               id="date"
               name="date"
               type="date"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+              className="form-input"
               value={form.date}
               onChange={handleChange}
               required
@@ -219,7 +218,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
         <div>
           <label
             htmlFor="description"
-            className="block text-sm font-medium text-gray-700 mb-1"
+            className="block text-sm font-medium text-gray-300 mb-1"
           >
             Description
           </label>
@@ -228,7 +227,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
             name="description"
             type="text"
             placeholder="Optional description"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-blue-500"
+            className="form-input"
             value={form.description}
             onChange={handleChange}
             disabled={loading}
@@ -240,7 +239,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
             <button
               type="button"
               onClick={handleCancel}
-              className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500"
+              className="btn btn-secondary"
               disabled={loading}
             >
               Cancel
@@ -248,7 +247,7 @@ const AddTransaction = ({ onAdd, onClose }) => {
           )}
           <button
             type="submit"
-            className="px-4 py-2 text-sm font-medium text-white bg-blue-600 border border-transparent rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+            className="btn btn-primary disabled:opacity-50 disabled:cursor-not-allowed"
             disabled={loading}
           >
             {loading ? "Adding..." : "Add Transaction"}

@@ -1,5 +1,3 @@
-// File: frontend/src/hooks/useTransaction.js
-
 import { useState, useEffect, useCallback } from "react";
 import { transactionService } from "../services/transactions";
 

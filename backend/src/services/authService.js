@@ -1,5 +1,3 @@
-// backend/src/services/authService.js
-
 import { User } from "../models/User.js";
 import {
   generateTokens,

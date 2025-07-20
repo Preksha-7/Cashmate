@@ -1,4 +1,3 @@
-// backend/src/controllers/transactionController.js
 import { Transaction } from "../models/Transaction.js";
 
 // Removed the duplicate `getTransactions` function here as it conflicts with the class method.

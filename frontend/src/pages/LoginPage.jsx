@@ -1,5 +1,3 @@
-// File: frontend/src/pages/LoginPage.jsx
-
 import React, { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "../hooks/useAuth";

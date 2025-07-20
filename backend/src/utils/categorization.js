@@ -1,5 +1,3 @@
-// backend/src/utils/categorization.js
-
 /**
  * Simple transaction categorization based on description
  * @param {string} description - Transaction description or vendor name

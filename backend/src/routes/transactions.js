@@ -1,4 +1,3 @@
-// backend/src/routes/transactions.js
 import express from "express";
 import Joi from "joi";
 import { TransactionController } from "../controllers/transactionController.js";

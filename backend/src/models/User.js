@@ -1,6 +1,5 @@
-// backend/src/models/User.js
 import { executeQuery } from "../config/database.js";
-import bcrypt from "bcryptjs"; // Changed from "bcrypt" to "bcryptjs"
+import bcrypt from "bcryptjs";
 
 export class User {
   constructor(data) {
@@ -8,7 +7,7 @@ export class User {
     this.name = data.name;
     this.email = data.email;
     this.password = data.password;
-    this.created_at = data.created_at; // Corrected from data.created.at
+    this.created_at = data.created_at;
     this.updated_at = data.updated_at;
   }
 

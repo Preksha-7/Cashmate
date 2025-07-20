@@ -1,5 +1,3 @@
-// frontend/src/pages/ReportsPage.jsx
-
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/common/Header";

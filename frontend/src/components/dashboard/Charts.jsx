@@ -1,5 +1,3 @@
-// File: frontend/src/components/dashboard/Charts.jsx
-
 import React from "react";
 import {
   PieChart,

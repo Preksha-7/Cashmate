@@ -1,4 +1,3 @@
-// backend/src/controllers/receiptController.js
 import { Receipt } from "../models/Receipt.js";
 import {
   cleanupTempFiles,

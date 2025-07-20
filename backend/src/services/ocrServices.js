@@ -1,4 +1,3 @@
-// backend/src/services/ocrServices.js
 import FormData from "form-data";
 import fs from "fs";
 import fetch from "node-fetch";

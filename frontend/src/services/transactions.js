@@ -1,4 +1,3 @@
-// frontend/src/services/transactions.js
 import { apiService } from "./api";
 
 export const transactionService = {
