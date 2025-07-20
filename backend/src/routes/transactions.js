@@ -13,10 +13,6 @@ import {
 } from "../middleware/validation.js";
 import { authenticateToken } from "../middleware/auth.js";
 import { asyncHandler } from "../middleware/errorHandler.js";
-import { getTransactions } from "../controllers/transactionController.js";
-import { addTransaction } from "../controllers/transactionController.js";
-import { protect } from "../middleware/auth.js";
-import { validateTransaction } from "../middleware/validators.js";
 
 const router = express.Router();
 
@@ -26,77 +22,28 @@ router.use(authenticateToken);
 // Apply input sanitization to all routes
 router.use(sanitizeInput);
 
-router.get("/", protect, getTransactions);
-router.post("/", protect, validateTransaction, addTransaction);
-
-// Create new transaction
-router.post(
-  "/",
-  validateRequest(transactionSchema),
-  asyncHandler(TransactionController.create)
-);
-
-// Get all transactions with filtering and pagination
-router.get(
-  "/",
-  validateRequest(transactionQuerySchema, "query"),
-  asyncHandler(TransactionController.getAll)
-);
-
-// Get financial summary
+// Get financial summary (must be before /:id route)
 router.get(
   "/summary",
   validateRequest(transactionQuerySchema, "query"),
   asyncHandler(TransactionController.getSummary)
 );
 
-// Get transactions by category
+// Get transactions by category (must be before /:id route)
 router.get(
   "/categories",
   validateRequest(transactionQuerySchema, "query"),
   asyncHandler(TransactionController.getByCategory)
 );
 
-// Get monthly summary
+// Get monthly summary (must be before /:id route)
 router.get(
   "/monthly-summary",
   validateRequest(transactionQuerySchema, "query"),
   asyncHandler(TransactionController.getMonthlySummary)
 );
 
-// Get single transaction by ID
-router.get(
-  "/:id",
-  validateParams(idParamSchema),
-  asyncHandler(TransactionController.getById)
-);
-
-// Update transaction
-router.put(
-  "/:id",
-  validateParams(idParamSchema),
-  validateRequest(updateTransactionSchema),
-  asyncHandler(TransactionController.update)
-);
-
-// Partial update transaction (PATCH)
-router.patch(
-  "/:id",
-  validateParams(idParamSchema),
-  validateRequest(updateTransactionSchema),
-  asyncHandler(TransactionController.update)
-);
-
-// Delete transaction
-router.delete(
-  "/:id",
-  validateParams(idParamSchema),
-  asyncHandler(TransactionController.delete)
-);
-
-// Additional utility routes
-
-// Get user's unique categories
+// Get user's unique categories (must be before /:id route)
 router.get(
   "/meta/categories",
   asyncHandler(async (req, res) => {
@@ -115,7 +62,7 @@ router.get(
   })
 );
 
-// Get recent transactions
+// Get recent transactions (must be before /:id route)
 router.get(
   "/recent/:limit?",
   validateParams(
@@ -143,7 +90,7 @@ router.get(
   })
 );
 
-// Get transaction statistics
+// Get transaction statistics (must be before /:id route)
 router.get(
   "/stats/overview",
   validateRequest(transactionQuerySchema, "query"),
@@ -173,7 +120,21 @@ router.get(
   })
 );
 
-// Bulk operations route
+// Create new transaction
+router.post(
+  "/",
+  validateRequest(transactionSchema),
+  asyncHandler(TransactionController.create)
+);
+
+// Get all transactions with filtering and pagination
+router.get(
+  "/",
+  validateRequest(transactionQuerySchema, "query"),
+  asyncHandler(TransactionController.getAll)
+);
+
+// Bulk operations route (must be before /:id route)
 router.post(
   "/bulk",
   validateRequest(
@@ -226,6 +187,36 @@ router.post(
       throw error;
     }
   })
+);
+
+// Get single transaction by ID (must be after all specific routes)
+router.get(
+  "/:id",
+  validateParams(idParamSchema),
+  asyncHandler(TransactionController.getById)
+);
+
+// Update transaction
+router.put(
+  "/:id",
+  validateParams(idParamSchema),
+  validateRequest(updateTransactionSchema),
+  asyncHandler(TransactionController.update)
+);
+
+// Partial update transaction (PATCH)
+router.patch(
+  "/:id",
+  validateParams(idParamSchema),
+  validateRequest(updateTransactionSchema),
+  asyncHandler(TransactionController.update)
+);
+
+// Delete transaction
+router.delete(
+  "/:id",
+  validateParams(idParamSchema),
+  asyncHandler(TransactionController.delete)
 );
 
 export default router;

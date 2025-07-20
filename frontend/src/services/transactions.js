@@ -1,3 +1,4 @@
+// frontend/src/services/transactions.js
 import { apiService } from "./api";
 
 export const transactionService = {
@@ -7,6 +8,7 @@ export const transactionService = {
       const response = await apiService.get("/transactions", params);
       return response;
     } catch (error) {
+      console.error("Error fetching transactions:", error);
       throw error;
     }
   },
@@ -15,8 +17,9 @@ export const transactionService = {
   getTransaction: async (id) => {
     try {
       const response = await apiService.get(`/transactions/${id}`);
-      return response.transaction;
+      return response.data.transaction;
     } catch (error) {
+      console.error("Error fetching transaction:", error);
       throw error;
     }
   },
@@ -25,8 +28,9 @@ export const transactionService = {
   createTransaction: async (transactionData) => {
     try {
       const response = await apiService.post("/transactions", transactionData);
-      return response.transaction;
+      return response.data.transaction;
     } catch (error) {
+      console.error("Error creating transaction:", error);
       throw error;
     }
   },
@@ -38,8 +42,9 @@ export const transactionService = {
         `/transactions/${id}`,
         transactionData
       );
-      return response.transaction;
+      return response.data.transaction;
     } catch (error) {
+      console.error("Error updating transaction:", error);
       throw error;
     }
   },
@@ -50,6 +55,7 @@ export const transactionService = {
       const response = await apiService.delete(`/transactions/${id}`);
       return response;
     } catch (error) {
+      console.error("Error deleting transaction:", error);
       throw error;
     }
   },
@@ -60,6 +66,7 @@ export const transactionService = {
       const response = await apiService.get("/transactions/summary", params);
       return response;
     } catch (error) {
+      console.error("Error fetching summary:", error);
       throw error;
     }
   },
@@ -67,12 +74,10 @@ export const transactionService = {
   // Get transactions by category
   getByCategory: async (params = {}) => {
     try {
-      const response = await apiService.get(
-        "/transactions/by-category",
-        params
-      );
+      const response = await apiService.get("/transactions/categories", params);
       return response;
     } catch (error) {
+      console.error("Error fetching by category:", error);
       throw error;
     }
   },
@@ -86,6 +91,7 @@ export const transactionService = {
       );
       return response;
     } catch (error) {
+      console.error("Error fetching monthly summary:", error);
       throw error;
     }
   },
@@ -93,9 +99,35 @@ export const transactionService = {
   // Get categories
   getCategories: async () => {
     try {
-      const response = await apiService.get("/categories");
-      return response.categories;
+      const response = await apiService.get("/transactions/meta/categories");
+      return response.data.categories;
     } catch (error) {
+      console.error("Error fetching categories:", error);
+      throw error;
+    }
+  },
+
+  // Get recent transactions
+  getRecentTransactions: async (limit = 5) => {
+    try {
+      const response = await apiService.get(`/transactions/recent/${limit}`);
+      return response.data.transactions;
+    } catch (error) {
+      console.error("Error fetching recent transactions:", error);
+      throw error;
+    }
+  },
+
+  // Get transaction statistics
+  getStats: async (params = {}) => {
+    try {
+      const response = await apiService.get(
+        "/transactions/stats/overview",
+        params
+      );
+      return response.data.stats;
+    } catch (error) {
+      console.error("Error fetching stats:", error);
       throw error;
     }
   },
@@ -103,11 +135,12 @@ export const transactionService = {
   // Bulk import transactions
   bulkImport: async (transactions) => {
     try {
-      const response = await apiService.post("/transactions/bulk-import", {
+      const response = await apiService.post("/transactions/bulk", {
         transactions,
       });
       return response;
     } catch (error) {
+      console.error("Error bulk importing transactions:", error);
       throw error;
     }
   },
@@ -121,6 +154,7 @@ export const transactionService = {
       );
       return response;
     } catch (error) {
+      console.error("Error exporting transactions:", error);
       throw error;
     }
   },
