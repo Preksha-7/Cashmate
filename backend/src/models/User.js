@@ -1,6 +1,6 @@
 // backend/src/models/User.js
 import { executeQuery } from "../config/database.js";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs"; // Changed from "bcrypt" to "bcryptjs"
 
 export class User {
   constructor(data) {

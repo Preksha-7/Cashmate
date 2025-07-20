@@ -2,6 +2,7 @@
 import FormData from "form-data";
 import fs from "fs";
 import fetch from "node-fetch";
+import { categorizeTransaction } from "../utils/categorization.js"; // Import categorization utility
 
 class OCRService {
   constructor() {
@@ -103,8 +104,13 @@ class OCRService {
       return null;
     }
 
-    const { extracted_data, confidence_score, processing_status } =
+    const { extracted_data, confidence_score, processing_status, raw_text } =
       ocrResult.data;
+
+    // Suggest a category based on the extracted vendor or raw text
+    const suggestedCategory = categorizeTransaction(
+      extracted_data.vendor || raw_text
+    );
 
     return {
       amount: extracted_data.amount,
@@ -113,7 +119,8 @@ class OCRService {
       currency: extracted_data.currency || "INR",
       confidence_score: confidence_score,
       processing_status: processing_status,
-      raw_text: ocrResult.data.raw_text?.substring(0, 1000), // Limit raw text size
+      raw_text: raw_text?.substring(0, 1000), // Limit raw text size
+      category: suggestedCategory, // Add suggested category
     };
   }
 }

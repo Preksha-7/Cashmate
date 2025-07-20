@@ -1,3 +1,4 @@
+// backend/src/models/Receipt.js
 import { executeQuery } from "../config/database.js";
 
 export class Receipt {
@@ -50,16 +51,20 @@ export class Receipt {
     return result.insertId;
   }
 
-  // Get receipts by user ID
-  static async getByUserId(userId, limit = 10, offset = 0) {
-    const query = `
-      SELECT * FROM receipts 
-      WHERE user_id = ?
-      ORDER BY created_at DESC
-      LIMIT ? OFFSET ?
-    `;
+  // Get receipts by user ID with optional status filter
+  static async getByUserId(userId, filters = {}) {
+    let query = `SELECT * FROM receipts WHERE user_id = ?`;
+    const params = [userId];
 
-    const rows = await executeQuery(query, [userId, limit, offset]);
+    if (filters.status) {
+      query += ` AND processing_status = ?`;
+      params.push(filters.status);
+    }
+
+    query += ` ORDER BY created_at DESC LIMIT ? OFFSET ?`;
+    params.push(filters.limit || 10, filters.offset || 0);
+
+    const rows = await executeQuery(query, params);
     return rows.map((row) => new Receipt(row));
   }
 
@@ -88,7 +93,8 @@ export class Receipt {
     }
 
     if (updateFields.length === 0) {
-      throw new Error("No fields to update");
+      // No fields to update, fetch and return current state
+      return await Receipt.findById(id);
     }
 
     updateFields.push("updated_at = CURRENT_TIMESTAMP");
@@ -111,10 +117,17 @@ export class Receipt {
     return result.affectedRows > 0;
   }
 
-  // Get receipt count for user
-  static async getCountByUserId(userId) {
-    const query = "SELECT COUNT(*) as count FROM receipts WHERE user_id = ?";
-    const rows = await executeQuery(query, [userId]);
+  // Get receipt count for user with optional status filter
+  static async getCountByUserId(userId, status = null) {
+    let query = "SELECT COUNT(*) as count FROM receipts WHERE user_id = ?";
+    const params = [userId];
+
+    if (status) {
+      query += ` AND processing_status = ?`;
+      params.push(status);
+    }
+
+    const rows = await executeQuery(query, params);
     return rows[0].count;
   }
 

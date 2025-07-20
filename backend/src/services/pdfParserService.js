@@ -2,6 +2,7 @@
 import axios from "axios"; // Use import instead of require
 import FormData from "form-data"; // Use import instead of require
 import { logger } from "../utils/logger.js"; // Use import instead of require
+import { categorizeTransaction } from "../utils/categorization.js"; // Import categorization utility
 
 class PDFParserService {
   constructor() {
@@ -88,9 +89,7 @@ class PDFParserService {
       description: transaction.description,
       amount: parseFloat(transaction.amount),
       type: transaction.transaction_type === "debit" ? "expense" : "income", // Map 'debit'/'credit' to 'expense'/'income'
-      category:
-        transaction.category ||
-        this.categorizeTransaction(transaction.description), // Use category from parser if available, else categorize
+      category: categorizeTransaction(transaction.description), // Use categorization utility
       // balance: transaction.balance, // Not directly stored in Transaction model
       // source: "bank_statement", // Not directly stored in Transaction model
     }));
@@ -103,54 +102,11 @@ class PDFParserService {
         statementPeriod: parsedData.statement_period,
         totalCredits: parsedData.total_credits,
         totalDebits: parsedData.total_debits,
-        transactionCount: parsedData.transaction_count,
+        transaction_count: parsedData.transaction_count,
         openingBalance: parsedData.opening_balance,
         closingBalance: parsedData.closing_balance,
       },
     };
-  }
-
-  /**
-   * Simple transaction categorization
-   * @param {string} description - Transaction description
-   * @returns {string} Category
-   */
-  categorizeTransaction(description) {
-    const desc = description.toLowerCase();
-
-    // Define category keywords
-    const categories = {
-      food: ["restaurant", "food", "cafe", "pizza", "burger", "meal"],
-      transport: ["uber", "taxi", "bus", "train", "petrol", "gas", "parking"],
-      shopping: ["amazon", "flipkart", "mall", "store", "shop", "purchase"],
-      bills: ["electricity", "water", "gas", "phone", "internet", "utility"],
-      entertainment: ["movie", "cinema", "netflix", "spotify", "game"],
-      healthcare: ["hospital", "doctor", "pharmacy", "medical", "health"],
-      salary: ["salary", "wage", "payroll", "income"],
-      transfer: ["transfer", "sent", "received", "deposit", "upi"],
-      withdrawal: ["atm", "cash", "withdrawal"],
-      fees: ["fee", "charge", "penalty", "interest"],
-      groceries: [
-        "supermarket",
-        "kirana",
-        "grocery",
-        "d-mart",
-        "reliance fresh",
-      ],
-      housing: ["rent", "mortgage", "housing", "maintenance"],
-      education: ["school", "college", "fees", "books", "tuition"],
-      investments: ["investment", "stocks", "mutual fund"],
-      personal: ["salon", "spa", "gym"],
-      travel: ["flight", "hotel", "travel"],
-    };
-
-    for (const [category, keywords] of Object.entries(categories)) {
-      if (keywords.some((keyword) => desc.includes(keyword))) {
-        return category;
-      }
-    }
-
-    return "miscellaneous"; // Default category if none match
   }
 }
 

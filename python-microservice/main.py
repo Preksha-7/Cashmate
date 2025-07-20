@@ -17,6 +17,7 @@ import camelot
 from io import BytesIO
 from pydantic import BaseModel, ValidationError
 from dotenv import load_dotenv # Moved to top
+import uvicorn # ADD THIS LINE
 
 load_dotenv() # Load environment variables at the very beginning
 
@@ -214,7 +215,7 @@ class ReceiptParser:
         except HTTPException: # Re-raise FastAPI HTTPExceptions directly
             raise
         except Exception as e:
-            logger.error(f"Error processing receipt: {str(e)}", exc_info=True)
+            logger.error(f"Error processing receipt: {str(e)}")
             return {
                 "raw_text": "",
                 "extracted_data": {
@@ -249,7 +250,7 @@ class PDFParser:
         self.common_patterns = {
             'date': [
                 r'\b\d{1,2}[-/.]\d{1,2}[-/.]\d{2,4}\b', # DD/MM/YYYY, DD-MM-YYYY, DD.MM.YYYY
-                r'\b\d{2,4}[-/.]\d{1,2}[-/.]\d{1,2}\b', # YYYY/MM/DD, YYYY-MM-DD, YYYY.MM.DD
+                r'\b\d{2,4}[-/.]\d{1,2}[-/.]\d{1,2}\b', # YYYY/MM/DD, YYYY-MM/DD, YYYY.MM.DD
                 r'\b\d{1,2}\s+(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{2,4}\b', # DD Mon YYYY
                 r'((?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*\s+\d{1,2},?\s+\d{2,4})', # Mon DD, YYYY
                 r'(\d{1,2}-(?:jan|feb|mar|apr|may|jun|jul|aug|sep|oct|nov|dec)[a-z]*-\d{2,4})' # DD-Mon-YYYY
@@ -284,7 +285,9 @@ class PDFParser:
         
     def extract_text_pypdf2(self, pdf_file: BytesIO) -> str:
         """Extract text using PyPDF2"""
+        # PyPDF2 import needs to be here or at module level if used. Let's assume module level.
         try:
+            import PyPDF2 # moved here for local scope if not already at top
             pdf_reader = PyPDF2.PdfReader(pdf_file)
             text = ""
             for page in pdf_reader.pages:
