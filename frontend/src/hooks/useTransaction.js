@@ -21,19 +21,20 @@ export const useTransactions = (filters = {}) => {
     totalPages: 0,
   });
 
-  // Fetch transactions
+  // Fetch transactions based on filters
   const fetchTransactions = useCallback(
     async (newFilters = {}) => {
       try {
         setLoading(true);
         setError(null);
 
-        const response = await transactionService.getTransactions({
-          ...filters,
-          ...newFilters,
-        });
+        // Merge initial filters with any new filters (e.g., for pagination)
+        const currentFilters = { ...filters, ...newFilters };
 
-        setTransactions(response.transactions); // Access response.transactions directly
+        const response = await transactionService.getTransactions(
+          currentFilters
+        ); // Pass all relevant filters
+        setTransactions(response.transactions);
         setPagination(response.pagination);
       } catch (err) {
         setError(err.message || "Failed to fetch transactions");
@@ -45,51 +46,56 @@ export const useTransactions = (filters = {}) => {
       }
     },
     [filters]
-  );
+  ); // Depend on filters object
 
-  // Fetch summary
-  const fetchSummary = useCallback(async (summaryFilters = {}) => {
+  // Fetch summary based on filters
+  const fetchSummary = useCallback(async () => {
     try {
-      const response = await transactionService.getSummary(summaryFilters);
-      setSummary(response.summary); // Access response.summary directly
+      const response = await transactionService.getSummary({
+        startDate: filters.startDate,
+        endDate: filters.endDate,
+      });
+      setSummary(response.summary);
     } catch (err) {
       console.error("Error fetching summary:", err);
       setSummary({ totalIncome: 0, totalExpenses: 0, balance: 0 });
     }
-  }, []);
+  }, [filters.startDate, filters.endDate]); // Depend on relevant filter props
 
-  // NEW: Fetch chart data (monthly and category)
+  // Fetch chart data (monthly and category) based on filters
   const fetchChartData = useCallback(async () => {
     try {
       const [monthlyResponse, categoryResponse] = await Promise.all([
-        transactionService.getMonthlySummary(),
-        transactionService.getByCategory(),
+        transactionService.getMonthlySummary({ year: filters.year }), // Pass year for monthly trend
+        transactionService.getByCategory({
+          startDate: filters.startDate,
+          endDate: filters.endDate,
+        }), // Pass date range for category
       ]);
-      setMonthlyData(monthlyResponse.monthlyData || []); // Access monthlyData directly
-      setCategoryData(categoryResponse.categories || []); // Access categories directly
+      setMonthlyData(monthlyResponse.monthlyData || []);
+      setCategoryData(categoryResponse.categories || []);
     } catch (error) {
       console.error("Error loading chart data:", error);
       setMonthlyData([]);
       setCategoryData([]);
     }
-  }, []);
+  }, [filters.year, filters.startDate, filters.endDate]); // Depend on relevant filter props
 
   // Add transaction
   const addTransaction = async (transactionData) => {
     try {
       setLoading(true);
       const response = await transactionService.createTransaction(
-        // Get full response
         transactionData
       );
-
-      // Optimistically update the list
-      setTransactions((prev) => [response.transaction, ...prev]); // Access response.transaction
-
-      // Refresh summary and chart data
-      await Promise.all([fetchSummary(filters), fetchChartData()]);
-
-      return { success: true, data: response.transaction }; // Return response.transaction
+      setTransactions((prev) => [response.transaction, ...prev]);
+      // Refresh all data relevant to the current view
+      await Promise.all([
+        fetchSummary(),
+        fetchChartData(),
+        fetchTransactions(),
+      ]); // Refresh with current filters
+      return { success: true, data: response.transaction };
     } catch (err) {
       setError(err.message || "Failed to add transaction");
       return { success: false, error: err.message };
@@ -103,20 +109,19 @@ export const useTransactions = (filters = {}) => {
     try {
       setLoading(true);
       const response = await transactionService.updateTransaction(
-        // Get full response
         id,
         transactionData
       );
-
-      // Update the transaction in the list
-      setTransactions(
-        (prev) => prev.map((t) => (t.id === id ? response.transaction : t)) // Access response.transaction
+      setTransactions((prev) =>
+        prev.map((t) => (t.id === id ? response.transaction : t))
       );
-
-      // Refresh summary and chart data
-      await Promise.all([fetchSummary(filters), fetchChartData()]);
-
-      return { success: true, data: response.transaction }; // Return response.transaction
+      // Refresh all data relevant to the current view
+      await Promise.all([
+        fetchSummary(),
+        fetchChartData(),
+        fetchTransactions(),
+      ]); // Refresh with current filters
+      return { success: true, data: response.transaction };
     } catch (err) {
       setError(err.message || "Failed to update transaction");
       return { success: false, error: err.message };
@@ -130,13 +135,13 @@ export const useTransactions = (filters = {}) => {
     try {
       setLoading(true);
       await transactionService.deleteTransaction(id);
-
-      // Remove transaction from list
       setTransactions((prev) => prev.filter((t) => t.id !== id));
-
-      // Refresh summary and chart data
-      await Promise.all([fetchSummary(filters), fetchChartData()]);
-
+      // Refresh all data relevant to the current view
+      await Promise.all([
+        fetchSummary(),
+        fetchChartData(),
+        fetchTransactions(),
+      ]); // Refresh with current filters
       return { success: true };
     } catch (err) {
       setError(err.message || "Failed to delete transaction");
@@ -153,19 +158,17 @@ export const useTransactions = (filters = {}) => {
     }
   };
 
-  // Refresh data
-  const refresh = () => {
-    fetchTransactions();
-    fetchSummary(filters);
+  // Refresh all data based on current filters
+  const refresh = useCallback(() => {
+    fetchTransactions({ page: 1 }); // Reset to page 1 on full refresh
+    fetchSummary();
     fetchChartData();
-  };
+  }, [fetchTransactions, fetchSummary, fetchChartData]);
 
-  // Initial load for all data
+  // Initial load for all data when filters change
   useEffect(() => {
-    fetchTransactions();
-    fetchSummary(filters);
-    fetchChartData();
-  }, [fetchTransactions, fetchSummary, fetchChartData, filters]);
+    refresh();
+  }, [refresh]);
 
   return {
     // Data

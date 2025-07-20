@@ -1,14 +1,14 @@
-// frontend/src/pages/DashboardPage.jsx
+// frontend/src/pages/ReportsPage.jsx
 
 import React, { useState, useEffect, useMemo } from "react";
 import { Link } from "react-router-dom";
 import Header from "../components/common/Header";
 import Loading from "../components/common/Loading";
-import { useTransactions } from "../hooks/useTransaction";
-import Charts from "../components/dashboard/Charts";
-import SummaryCards from "../components/dashboard/SummaryCards";
+import { useTransactions } from "../hooks/useTransaction"; // Re-use the hook
+import Charts from "../components/dashboard/Charts"; // Re-use the Charts component
+import SummaryCards from "../components/dashboard/SummaryCards"; // Re-use SummaryCards
 
-const DashboardPage = () => {
+const ReportsPage = () => {
   const today = new Date();
   const [selectedMonth, setSelectedMonth] = useState(today.getMonth() + 1); // Month is 0-indexed
   const [selectedYear, setSelectedYear] = useState(today.getFullYear());
@@ -21,9 +21,9 @@ const DashboardPage = () => {
   const formattedEndDate = lastDayOfMonth.toISOString().split("T")[0];
 
   // Filters for the useTransactions hook
+  // No 'limit' here, as this page is specifically for showing the full monthly data.
   const filters = useMemo(
     () => ({
-      limit: 5, // Keep limit for recent transactions on dashboard overview
       startDate: formattedStartDate,
       endDate: formattedEndDate,
       year: selectedYear, // Pass year for monthly trend chart
@@ -58,7 +58,7 @@ const DashboardPage = () => {
     return (
       <div className="min-h-screen bg-primary-900">
         <Header />
-        <Loading fullScreen text="Loading dashboard..." />
+        <Loading fullScreen text="Loading reports..." />
       </div>
     );
   }
@@ -88,11 +88,11 @@ const DashboardPage = () => {
       <Header />
 
       <main className="max-w-7xl mx-auto py-6 px-4 sm:px-6 lg:px-8">
-        {/* Welcome Section */}
+        {/* Reports Header Section */}
         <div className="mb-8">
-          <h1 className="text-2xl font-bold text-gray-100">Dashboard</h1>
+          <h1 className="text-2xl font-bold text-gray-100">Monthly Reports</h1>
           <p className="mt-1 text-sm text-gray-300">
-            Welcome back! Here's your financial overview.
+            View detailed financial reports by month.
           </p>
         </div>
 
@@ -122,7 +122,7 @@ const DashboardPage = () => {
           </select>
         </div>
 
-        {/* Summary Cards - These components internally use their own bg colors */}
+        {/* Summary Cards */}
         <SummaryCards summary={summary} />
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-8">
@@ -132,12 +132,10 @@ const DashboardPage = () => {
               <h3 className="text-lg font-medium text-gray-900">
                 Monthly Trend (for {selectedYear})
               </h3>
-              <Link
-                to="/transactions"
-                className="text-sm text-primary-500 hover:text-primary-400"
-              >
+              {/* Optional: Link to a full transactions page if desired */}
+              {/* <Link to="/transactions" className="text-sm text-primary-500 hover:text-primary-400">
                 View All
-              </Link>
+              </Link> */}
             </div>
             {loading ? (
               <div className="h-64 flex items-center justify-center">
@@ -156,15 +154,13 @@ const DashboardPage = () => {
           <div className="card p-6">
             <div className="flex items-center justify-between mb-4">
               <h3 className="text-lg font-medium text-gray-900">
-                Top Categories (for {months[selectedMonth - 1].label}{" "}
+                Category Breakdown (for {months[selectedMonth - 1].label}{" "}
                 {selectedYear})
               </h3>
-              <Link
-                to="/transactions"
-                className="text-sm text-primary-500 hover:text-primary-400"
-              >
+              {/* Optional: Link to a full transactions page if desired */}
+              {/* <Link to="/transactions" className="text-sm text-primary-500 hover:text-primary-400">
                 View All
-              </Link>
+              </Link> */}
             </div>
             {loading ? (
               <div className="h-64 flex items-center justify-center">
@@ -180,12 +176,13 @@ const DashboardPage = () => {
           </div>
         </div>
 
-        {/* Recent Transactions (now filtered by selected month/year) */}
+        {/* Transactions List for the selected month/year */}
         <div className="card p-6 mb-8">
           <div className="flex items-center justify-between mb-6">
             <h3 className="text-lg font-medium text-gray-900">
               Transactions for {months[selectedMonth - 1].label} {selectedYear}
             </h3>
+            {/* You can still provide a link to the main transactions page here if needed */}
             <Link to="/transactions" className="btn btn-primary">
               View All Transactions
             </Link>
@@ -279,4 +276,4 @@ const DashboardPage = () => {
   );
 };
 
-export default DashboardPage;
+export default ReportsPage;

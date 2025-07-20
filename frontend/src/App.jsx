@@ -1,3 +1,5 @@
+// frontend/src/App.jsx
+
 import React from "react";
 import {
   BrowserRouter as Router,
@@ -15,6 +17,7 @@ import DashboardPage from "./pages/DashboardPage";
 import TransactionsPage from "./pages/TransactionsPage";
 import UploadPage from "./pages/UploadPage";
 import SettingsPage from "./pages/SettingsPage";
+import ReportsPage from "./pages/ReportsPage"; // Import the new ReportsPage
 
 // Protected Route Component
 const ProtectedRoute = ({ children }) => {
@@ -72,6 +75,15 @@ const AppRouter = () => {
         element={
           <ProtectedRoute>
             <SettingsPage />
+          </ProtectedRoute>
+        }
+      />
+      {/* New Route for Reports Page */}
+      <Route
+        path="/reports" // Define a new path for your reports page
+        element={
+          <ProtectedRoute>
+            <ReportsPage /> {/* Render the new ReportsPage */}
           </ProtectedRoute>
         }
       />

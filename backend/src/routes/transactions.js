@@ -1,18 +1,18 @@
 // backend/src/routes/transactions.js
 import express from "express";
-import Joi from "joi"; // Ensure Joi is imported if not already
+import Joi from "joi";
 import { TransactionController } from "../controllers/transactionController.js";
 import {
   validateRequest,
   validateParams,
   transactionSchema,
   updateTransactionSchema,
-  transactionQuerySchema,
+  transactionQuerySchema, // This schema should allow startDate, endDate, year, etc.
   idParamSchema,
   sanitizeInput,
 } from "../middleware/validation.js";
 import { authenticateToken } from "../middleware/auth.js";
-import { asyncHandler } from "../middleware/errorHandler.js"; // Ensure asyncHandler is imported
+import { asyncHandler } from "../middleware/errorHandler.js";
 
 const router = express.Router();
 
@@ -26,91 +26,27 @@ router.use(sanitizeInput);
 router.get(
   "/summary",
   validateRequest(transactionQuerySchema, "query"),
-  asyncHandler(async (req, res, next) => {
-    try {
-      const { Transaction } = await import("../models/Transaction.js");
-      const { startDate, endDate } = req.query;
-
-      const start =
-        startDate ||
-        new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-          .toISOString()
-          .split("T")[0];
-      const end = endDate || new Date().toISOString().split("T")[0];
-
-      const summary = await Transaction.getFinancialSummary(
-        req.user.id,
-        start,
-        end
-      );
-      res.json({
-        success: true,
-        message: "Financial summary retrieved successfully",
-        summary,
-      });
-    } catch (error) {
-      next(error); // Pass to global error handler
-    }
-  })
+  asyncHandler(TransactionController.getSummary) // Use the controller method directly
 );
 
 // Get transactions by category
 router.get(
   "/categories",
   validateRequest(transactionQuerySchema, "query"),
-  asyncHandler(async (req, res, next) => {
-    try {
-      const { Transaction } = await import("../models/Transaction.js");
-      const { startDate, endDate } = req.query;
-      const start =
-        startDate ||
-        new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-          .toISOString()
-          .split("T")[0];
-      const end = endDate || new Date().toISOString().split("T")[0];
-      const categories = await Transaction.getByCategory(
-        req.user.id,
-        start,
-        end
-      );
-      res.json({
-        success: true,
-        message: "Category data retrieved successfully",
-        categories,
-      });
-    } catch (error) {
-      next(error); // Pass to global error handler
-    }
-  })
+  asyncHandler(TransactionController.getByCategory) // Use the controller method directly
 );
 
 // Get monthly summary
 router.get(
   "/monthly-summary",
   validateRequest(transactionQuerySchema, "query"),
-  asyncHandler(async (req, res, next) => {
-    try {
-      const { Transaction } = await import("../models/Transaction.js");
-      const { year } = req.query;
-      const monthlyData = await Transaction.getMonthlySummary(
-        req.user.id,
-        year ? parseInt(year) : new Date().getFullYear()
-      );
-      res.json({
-        success: true,
-        message: "Monthly summary retrieved successfully",
-        monthlyData,
-      });
-    } catch (error) {
-      next(error); // Pass to global error handler
-    }
-  })
+  asyncHandler(TransactionController.getMonthlySummary) // Use the controller method directly
 );
 
 // Get user's unique categories (for categorization features)
 router.get(
   "/meta/categories",
-  asyncHandler(async (req, res) => {
+  asyncHandler(async (req, res, next) => {
     try {
       const { Transaction } = await import("../models/Transaction.js");
       const categories = await Transaction.getCategories(req.user.id);
@@ -120,12 +56,14 @@ router.get(
         data: { categories },
       });
     } catch (error) {
-      throw error;
+      next(error); // Pass to global error handler
     }
   })
 );
 
 // Get recent transactions
+// This route should also consider the startDate/endDate from query if present, for consistency
+// It's already handled by TransactionController.getAll so we can just use that
 router.get(
   "/recent/:limit?",
   validateParams(
@@ -133,13 +71,22 @@ router.get(
       limit: Joi.number().integer().min(1).max(50).default(5).optional(),
     })
   ),
-  asyncHandler(async (req, res) => {
+  validateRequest(transactionQuerySchema, "query"), // Add query validation for optional date filters
+  asyncHandler(async (req, res, next) => {
     try {
       const { Transaction } = await import("../models/Transaction.js");
-      const limit = req.params.limit || 5;
+      const limit = req.params.limit ? parseInt(req.params.limit) : 5; // Use default from Joi
+      const { startDate, endDate, type, category } = req.query; // Get date filters from query
+
+      const filters = { limit, startDate, endDate, type, category };
+
       const transactions = await Transaction.getRecent(
         req.user.id,
-        parseInt(limit)
+        filters.limit,
+        filters.startDate, // Pass startDate for recent transactions
+        filters.endDate, // Pass endDate for recent transactions
+        filters.type,
+        filters.category
       );
 
       res.json({
@@ -148,7 +95,7 @@ router.get(
         data: { transactions },
       });
     } catch (error) {
-      throw error;
+      next(error); // Pass to global error handler
     }
   })
 );
